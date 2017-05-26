@@ -20,7 +20,7 @@ Require JavaScript for your users and use this for things that don't care how it
 
 *For all you haters, this example is using vanilla custom elements and shadow DOM in order to show that it can work with any web component library.*
 
-On the server:
+On the server (`example.js`):
 
 ```js
 const { render } = require('./ssr-server');
@@ -43,9 +43,18 @@ hello.appendChild(document.createTextNode('World'));
 render(hello).then(console.log);
 ```
 
+And then just `node` your server code:
+
+```
+$ node example.js
+<x-hello>World<shadow-root>Hello, <slot></slot>!</shadow-root></x-hello>
+```
+
 On the client:
 
 ```js
 <script src="./ssr-client.js"></script>
-<!-- Your rendered string here (or above the script tag, whatever, but this ensures no FOUC). -->
+<x-hello>World<shadow-root>Hello, <slot></slot>!</shadow-root></x-hello>
 ```
+
+[See it in action!](https://www.webpackbin.com/bins/-Kl27vKrFK82_BDrv6h4)
