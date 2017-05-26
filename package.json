@@ -1,9 +1,9 @@
 {
+  "name": "@skatejs/ssr",
+  "description": "Server-side render your web components.",
   "dependencies": {
-    "@webcomponents/custom-elements": "^1.0.0",
     "preact": "^8.1.0",
-    "skatejs": "^5.0.0-alpha.4",
-    "source-map-support": "^0.4.15",
+    "skatejs": "^5.0.0-alpha.7",
     "undom": "^0.3.3"
   }
 }
