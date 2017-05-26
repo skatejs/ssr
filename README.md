@@ -33,6 +33,12 @@ Require JavaScript for your users and don't care how things look if it's disable
 
 ## How
 
+Installing:
+
+```
+npm install @skatejs/ssr
+```
+
 *For all you haters, this example is using vanilla custom elements and shadow DOM in order to show that it can work with any web component library.*
 
 On the server (`example.js`):
