@@ -20,7 +20,7 @@ This is currently a WIP of how one would server-side render web components.
   - Probable performance hit (see above).
   - Requires client to include a script (friction).
   - Pollutes the custom element namespace, or requires the consumer to manually register (more friction).
-- Shadow root content, prior to being hydrated, is *not* inert. Putting it inside of a `<template>` tag means that it's not participating in the document. It can't be found by a `querySelector` and likely won't be crawled.
+- Shadow root content, prior to being hydrated, is *not* inert so that it can be found by `querySelector` and crawlers. Putting it inside of a `<template>` tag means that it's not participating in the document and the aforementioned wouldn't work, thus negating the benefits of SSR altogether.
 
 ## Controversial opinion
 
