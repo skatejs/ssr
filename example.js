@@ -1,4 +1,4 @@
-const { render } = require('./ssr-server');
+const { render } = require('./index');
 const { customElements, HTMLElement } = window;
 
 class Hello extends HTMLElement {

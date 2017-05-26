@@ -12,6 +12,19 @@ This is currently a WIP of how one would server-side render web components.
 
 - While the page can be rendered without JavaScript, it won't be pretty because there is no style emulation being done on the server.
 
+## Notes
+
+- Uses inline `<script>` method. This [seems](https://discourse.wicg.io/t/declarative-shadow-dom/1904/8) to be more performant. This creates more weight to send to the client, however:
+  - This doesn't render a whole page. It can, but doesn't make an opinion there.
+  - It would make assumptions on the consumer manually including it or where it should be put, thus possibly making more assumptions on how the page is rendered.
+- Inline `<script>` tags use relative DOM accessors like `document.currentScript`, `previousElementSibling` and `firstElementChild`. Any HTML post-processing could affect the mileage of it, so beware.
+  - Could use a `<shadow-root>` element instead, but see below.
+- Could use a `<shadow-root>` element, but that would mean:
+  - Probably performance hit (see above).
+  - Requires client to include a script (friction).
+  - Pollutes the custom element namespace, or requires the consumer to manually register (more friction).
+- Shadow root content, prior to being hydrated, is *not* inert. Putting it inside of a `<template>` tag means that it's not participating in the document. It can't be found by a `querySelector` and likely won't be crawled.
+
 ## Controversial opinion
 
 Require JavaScript for your users and use this for things that don't care how it looks.
@@ -23,7 +36,7 @@ Require JavaScript for your users and use this for things that don't care how it
 On the server (`example.js`):
 
 ```js
-const { render } = require('./ssr-server');
+const { render } = require('./index');
 const { customElements, HTMLElement } = window;
 
 class Hello extends HTMLElement {
@@ -47,14 +60,13 @@ And then just `node` your server code:
 
 ```
 $ node example.js
-<x-hello>World<shadow-root>Hello, <slot></slot>!</shadow-root></x-hello>
+<x-hello><shadow-root>Hello, <slot></slot>!</shadow-root>World</x-hello><script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>
 ```
 
-On the client:
+On the client, just inline your server-rendered string:
 
 ```js
-<script src="./ssr-client.js"></script>
-<x-hello>World<shadow-root>Hello, <slot></slot>!</shadow-root></x-hello>
+<x-hello><shadow-root>Hello, <slot></slot>!</shadow-root>World</x-hello><script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>
 ```
 
 [See it in action!](https://www.webpackbin.com/bins/-Kl27vKrFK82_BDrv6h4)
