@@ -126,7 +126,7 @@ function ssr (node) {
   const localName = nodeName.toLowerCase();
   const shadowNodes = shadowRoot ? stringifyOuter(shadowRoot) : '';
   const lightNodes = stringifyInner(node);
-  return `<${localName}${attrsAsString}>${lightNodes}${shadowNodes}</${localName}>`;
+  return `<${localName}${attrsAsString}>${shadowNodes}${lightNodes}</${localName}><script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>`;
 }
 
 function render (node) {
