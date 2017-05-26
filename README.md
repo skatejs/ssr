@@ -2,6 +2,11 @@
 
 This is currently a WIP of how one would server-side render web components.
 
+- Uses [`undom`](https://github.com/developit/undom) for a minimal DOM API in Node.
+- Super minimal (~140 LoC)
+- No polyfills necessary (on the server).
+- No extra code to include on the client.
+
 ## Why
 
 - Lightweight rehydration of shadow content.
