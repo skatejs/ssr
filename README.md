@@ -24,7 +24,7 @@ This is currently a WIP of how one would server-side render web components.
 
 ## Controversial opinion
 
-Require JavaScript for your users and use this for things that don't care how it looks.
+Require JavaScript for your users and don't care how things look if it's disabled.
 
 ## How
 
