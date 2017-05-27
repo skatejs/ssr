@@ -1,22 +1,12 @@
 require('undom/register');
 
-// Undom has Element, but not HTMLElement.
-window.HTMLElement = window.Element;
-
 // Some libraries detect window or global, so we duplicate that here.
 window.Object = global.Object;
 
 const root = typeof window === 'undefined' ? global : window;
-const { document, HTMLElement, Node } = root;
+const { document, Node } = root;
 const parser = document.createElement('div');
-
-function walk (root, call) {
-  const chs = root.childNodes;
-  call(root);
-  for (let a = 0; a < chs.length; a++) {
-    walk(chs[a], call);
-  }
-}
+const isConnected = Symbol();
 
 function doIfIndex (host, refNode, callback, otherwise) {
   const chren = host.childNodes;
@@ -51,91 +41,109 @@ function reParentAll (nodeList, newHost) {
   return nodeList.map(n => reParentOne(n, newHost));
 }
 
-window.HTMLElement = function () {
-  return HTMLElement.call(this);
+function connectNode (node) {
+  if (node.connectedCallback && !node[isConnected]) {
+    node[isConnected] = true;
+    node.connectedCallback();
+  }
 }
-window.HTMLElement.prototype = Object.create(HTMLElement.prototype, {
-  appendChild: {value (newNode) {
-    this.childNodes = this.childNodes.concat(reParentAll(ensureArray(newNode), this));
-    return newNode;
-  }},
-  insertBefore: {value (newNode, refNode) {
-    newNode = reParentAll(ensureArray(newNode), this);
-    doIfIndex(this, refNode, (index, chren) => {
-      this.childNodes = chren.concat(chren.slice(0, index + 1), newNode, chren.slice(index));
-    }, (chren) => {
-      this.childNodes = chren.concat(newNode);
-    });
-    return newNode;
-  }},
-  removeChild: {value (refNode) {
-    doIfIndex(this, refNode, (index, chren) => {
-      reParentOne(refNode, null);
-      this.childNodes = chren.splice(index, 1).concat();
-    });
-    return refNode;
-  }},
-  replaceChild: {value (newNode, refNode) {
-    doIfIndex(this, refNode, (index, chren) => {
-      reParentOne(refNode, null);
-      this.childNodes = chren.concat(chren.slice(0, index), reParentAll(ensureArray(newNode)), chren.slice(index));
-    });
-    return refNode;
-  }},
-  attachShadow: {value () {
-    const shadowRoot = document.createElement('shadow-root');
-    Object.defineProperty(this, 'shadowRoot', { value: shadowRoot });
-    return shadowRoot;
-  }}
-});
+
+function disconnectNode (node) {
+  if (node.disconnectedCallback && node[isConnected]) {
+    node[isConnected] = false;
+    node.disconnectedCallback();
+  }
+}
+
+
+// Patch necessary DOM interfaces.
+
+// Patch the Node interface to connect nodes.
+window.Node.prototype.appendChild = function (newNode) {
+  return this.insertBefore(newNode);
+};
+window.Node.prototype.insertBefore = function (newNode, refNode) {
+  newNode = reParentAll(ensureArray(newNode), this);
+  doIfIndex(this, refNode, (index, chren) => {
+    this.childNodes = chren.concat(chren.slice(0, index + 1), newNode, chren.slice(index));
+  }, (chren) => {
+    this.childNodes = chren.concat(newNode);
+  });
+  newNode.forEach(connectNode);
+  return newNode;
+};
+window.Node.prototype.removeChild = function (refNode) {
+  doIfIndex(this, refNode, (index, chren) => {
+    reParentOne(refNode, null);
+    this.childNodes = chren.splice(index, 1).concat();
+  });
+  disconnectNode(refNode);
+  return refNode;
+};
+window.Node.prototype.replaceChild = function (newNode, refNode) {
+  doIfIndex(this, refNode, (index, chren) => {
+    reParentOne(refNode, null);
+    this.childNodes = chren.concat(chren.slice(0, index), reParentAll(ensureArray(newNode)), chren.slice(index));
+  });
+  newNode.forEach(connectNode);
+  disconnectNode(refNode);
+  return refNode;
+};
+
+// Patch the Element interface to allow shadow roots.
+window.Element.prototype.attachShadow = function () {
+  const shadowRoot = document.createElement('shadow-root');
+  Object.defineProperty(this, 'shadowRoot', { value: shadowRoot });
+  return shadowRoot;
+};
+
+// Undom does not define HTMLElement.
+window.HTMLElement = window.Element;
 
 
 // Custom elements
 
-window.customElements = {
-  registry: {},
+const registry = {};
+const customElements = window.customElements = {
   define (name, func) {
     Object.defineProperty(func.prototype, 'nodeName', { value: name });
-    this.registry[name] = func;
+    registry[name] = func;
   },
   get (name) {
-    return this.registry[name];
+    return registry[name];
   }
+};
+
+const createElement = document.createElement.bind(document);
+document.createElement = function (name) {
+  const Ctor = customElements.get(name);
+  return Ctor ? new Ctor() : createElement(name);
 };
 
 
 // Serialisation
 
-function stringifyAttributes (node) {
-  const { attributes = [] } = node;
-  return Array.from(attributes || []).map(({ name, value }) => ` ${name}="${value}"`);
-}
-
-function stringifyOuter (node) {
-  const localName = node.nodeName.toLowerCase();
-  if (localName === '#text') {
-    return node.nodeValue;
-  }
-  return `<${localName}${stringifyAttributes(node)}>${stringifyInner(node)}</${localName}>`;
-}
-
-function stringifyInner (node) {
-  return Array.from(node.childNodes).map(stringifyOuter).join('') || node.nodeValue || node.textContent || '';
-}
-
 function ssr (node) {
-  const { nodeName, shadowRoot } = node;
-  const attrsAsString = stringifyAttributes(node);
+  const { attributes = [], childNodes, nodeName, nodeValue, shadowRoot } = node;
+  if (nodeName === '#text') {
+    return nodeValue;
+  }
+  const attrsAsString = Array.from(attributes || []).map(({ name, value }) => ` ${name}="${value}"`);
   const localName = nodeName.toLowerCase();
-  const shadowNodes = shadowRoot ? stringifyOuter(shadowRoot) : '';
-  const lightNodes = stringifyInner(node);
-  return `<${localName}${attrsAsString}>${shadowNodes}${lightNodes}</${localName}><script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>`;
+  const shadowNodes = shadowRoot ? ssr(shadowRoot) : '';
+  const lightNodes = childNodes.map(ssr).join('');
+  const rehydrationScript = shadowRoot ? `<script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>` : '';
+  return `<${localName}${attrsAsString}>${shadowNodes}${lightNodes}</${localName}>${rehydrationScript}`;
 }
 
-function render (node) {
+function render (node, resolver) {
+  connectNode(node);
   return new Promise(resolve => {
-    walk(node, n => n.connectedCallback && n.connectedCallback());
-    setTimeout(() => resolve(ssr(node)), 1);
+    if (resolver) {
+      resolver(resolve);
+    } else {
+      setTimeout(() => resolve(ssr(node)), 10);
+    }
   });
 }
 
