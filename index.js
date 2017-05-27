@@ -93,10 +93,13 @@ window.HTMLElement.prototype = Object.create(HTMLElement.prototype, {
 // Custom elements
 
 window.customElements = {
+  registry: {},
   define (name, func) {
-    Object.defineProperty(func.prototype, 'nodeName', {
-      value: name
-    });
+    Object.defineProperty(func.prototype, 'nodeName', { value: name });
+    this.registry[name] = func;
+  },
+  get (name) {
+    return this.registry[name];
   }
 };
 
