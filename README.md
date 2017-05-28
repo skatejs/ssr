@@ -16,6 +16,7 @@ This is currently a WIP of how one would server-side render web components.
 ## Caveats
 
 - While the page can be rendered without JavaScript, it won't be pretty because there is no style emulation being done on the server.
+- You're limited to the subset of DOM methods available through Undom. We'll hopefully look at how to do this with any Node DOM implementation in the near future. This means that JSDOM will eventually work, which has support for more DOM interfaces and functionality. Undom works well with Preact and SkateJS due to their mininmal overhead and native DOM interface usage.
 
 ## Notes
 
