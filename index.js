@@ -142,7 +142,9 @@ function render (node, resolver) {
     if (resolver) {
       resolver(resolve);
     } else {
-      setTimeout(() => resolve(ssr(node)), 10);
+      // By default we wait until after microtasks complete in case frameworks
+      // are using them to schedule rendering.
+      setTimeout(() => resolve(ssr(node)));
     }
   });
 }
