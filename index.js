@@ -1,129 +1,84 @@
 require('undom/register');
 
-// Some libraries detect window or global, so we duplicate that here.
-window.Object = global.Object;
-
-const root = typeof window === 'undefined' ? global : window;
-const { document, Node } = root;
-const parser = document.createElement('div');
+const { document, Element, Node: { prototype: NodeProto } } = window;
+const { insertBefore, removeChild } = NodeProto;
 const isConnected = Symbol();
-
-function doIfIndex (host, refNode, callback, otherwise) {
-  const chren = host.childNodes;
-  const index = chren.indexOf(refNode);
-
-  if (index > -1) {
-    callback(index, chren);
-  } else if (otherwise) {
-    otherwise(chren);
-  }
-}
-
-function makeNodeList (nodeList) {
-  const copy = Array.from(nodeList || []);
-  copy.item = i => copy[i];
-  return copy;
-}
-
-function ensureArray (refNode) {
-  return refNode.nodeType === 8 ? Array.from(refNode.childNodes || []) : [refNode];
-}
-
-function reParentOne (refNode, newHost) {
-  Object.defineProperty(refNode, 'parentNode', {
-    configurable: true,
-    value: newHost
-  });
-  return refNode;
-}
-
-function reParentAll (nodeList, newHost) {
-  return nodeList.map(n => reParentOne(n, newHost));
-}
 
 function connectNode (node) {
   if (node.connectedCallback && !node[isConnected]) {
-    node[isConnected] = true;
     node.connectedCallback();
   }
+  node[isConnected] = true;
 }
 
 function disconnectNode (node) {
   if (node.disconnectedCallback && node[isConnected]) {
-    node[isConnected] = false;
     node.disconnectedCallback();
+  }
+  node[isConnected] = false;
+}
+
+function each (node, call) {
+  if (node instanceof DocumentFragment) {
+    Array.from(node.childNodes).forEach(call);
+  } else {
+    call(node);
   }
 }
 
+function patchCustomElements () {
+  const customElementRegistry = {};
+  global.HTMLElement = window.customElements = {
+    define (name, func) {
+      Object.defineProperty(func.prototype, 'nodeName', { value: name });
+      customElementRegistry[name] = func;
+    },
+    get (name) {
+      return customElementRegistry[name];
+    }
+  };
 
-// Patch necessary DOM interfaces.
+  const createElement = document.createElement.bind(document);
+  document.createElement = function (name) {
+    const Ctor = window.customElements.get(name);
+    return Ctor ? new Ctor() : createElement(name);
+  };
+}
 
-// Patch the Node interface to connect nodes.
-window.Node.prototype.appendChild = function (newNode) {
-  return this.insertBefore(newNode);
-};
-window.Node.prototype.insertBefore = function (newNode, refNode) {
-  newNode = reParentAll(ensureArray(newNode), this);
-  doIfIndex(this, refNode, (index, chren) => {
-    this.childNodes = chren.concat(chren.slice(0, index + 1), newNode, chren.slice(index));
-  }, (chren) => {
-    this.childNodes = chren.concat(newNode);
-  });
-  newNode.forEach(connectNode);
-  return newNode;
-};
-window.Node.prototype.removeChild = function (refNode) {
-  doIfIndex(this, refNode, (index, chren) => {
-    reParentOne(refNode, null);
-    this.childNodes = chren.splice(index, 1).concat();
-  });
-  disconnectNode(refNode);
-  return refNode;
-};
-window.Node.prototype.replaceChild = function (newNode, refNode) {
-  doIfIndex(this, refNode, (index, chren) => {
-    reParentOne(refNode, null);
-    this.childNodes = chren.concat(chren.slice(0, index), reParentAll(ensureArray(newNode)), chren.slice(index));
-  });
-  newNode.forEach(connectNode);
-  disconnectNode(refNode);
-  return refNode;
-};
+function patchDocumentFragment () {
+  DocumentFragment = class extends Node {};
+}
 
-// Patch the Element interface to allow shadow roots.
-window.Element.prototype.attachShadow = function () {
-  const shadowRoot = document.createElement('shadow-root');
-  Object.defineProperty(this, 'shadowRoot', { value: shadowRoot });
-  return shadowRoot;
-};
-
-// Undom does not define HTMLElement.
-window.HTMLElement = window.Element;
-
-
-// Custom elements
-
-const registry = {};
-const customElements = window.customElements = {
-  define (name, func) {
-    Object.defineProperty(func.prototype, 'nodeName', { value: name });
-    registry[name] = func;
-  },
-  get (name) {
-    return registry[name];
+function patchElement () {
+  global.HTMLElement = window.HTMLElement = class extends Element {
+    attachShadow () {
+      const shadowRoot = document.createElement('shadow-root');
+      Object.defineProperty(this, 'shadowRoot', { value: shadowRoot });
+      return shadowRoot;
+    }
   }
-};
+}
 
-const createElement = document.createElement.bind(document);
-document.createElement = function (name) {
-  const Ctor = customElements.get(name);
-  return Ctor ? new Ctor() : createElement(name);
-};
+function patchNode () {
+  // Undom internally calls insertBefore in appendChild.
+  NodeProto.insertBefore = function (newNode, refNode) {
+    const ret = insertBefore.call(this, newNode, refNode);
+    each(newNode, connectNode);
+    return ret;
+  };
+
+  // Undom internally calls removeChild in replaceChild.
+  NodeProto.removeChild = function (refNode) {
+    const ret = removeChild.call(this, refNode);
+    each(refNode, disconnectNode);
+    return ret;
+  };
+}
 
 
 // Serialisation
 
-function ssr (node) {
+function stringify (node) {
   const { attributes = [], childNodes, nodeName, nodeValue, shadowRoot } = node;
   if (nodeName === '#text') {
     return nodeValue;
@@ -144,9 +99,14 @@ function render (node, resolver) {
     } else {
       // By default we wait until after microtasks complete in case frameworks
       // are using them to schedule rendering.
-      setTimeout(() => resolve(ssr(node)));
+      setTimeout(() => resolve(stringify(node)));
     }
   });
 }
+
+patchCustomElements();
+patchDocumentFragment();
+patchElement();
+patchNode();
 
 module.exports.render = render;
