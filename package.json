@@ -2,7 +2,8 @@
   "name": "@skatejs/ssr",
   "description": "Server-side render your web components.",
   "files": [
-    "index.js"
+    "index.js",
+    "jest.js"
   ],
   "scripts": {
     "test": "jest"
