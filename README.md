@@ -1,4 +1,4 @@
-# Server-side rendering web components
+# Server-side rendering and testing
 
 [![Build Status](https://travis-ci.org/skatejs/ssr.svg?branch=master)](https://travis-ci.org/skatejs/ssr)
 
@@ -52,7 +52,7 @@ $ node example.js
 
 On the client, just inline your server-rendered string:
 
-```js
+```html
 <x-hello><shadow-root>Hello, <slot></slot>!</shadow-root>World</x-hello><script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>
 ```
 
@@ -60,7 +60,7 @@ On the client, just inline your server-rendered string:
 
 ## Testing in Node
 
-All you need to do is `require(`@skatejs/ssr')` in your environment and you're good to go.
+All you need to do is `require('@skatejs/ssr')` in your environment and you're good to go.
 
 ### Jest
 
