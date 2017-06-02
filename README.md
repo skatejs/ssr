@@ -1,5 +1,7 @@
 # Server-side rendering web components
 
+[![Build Status](https://travis-ci.org/skatejs/ssr.svg?branch=master)](https://travis-ci.org/skatejs/ssr)
+
 This is currently a WIP of how one would server-side render web components.
 
 - Uses [`undom`](https://github.com/developit/undom) for a minimal DOM API in Node.
