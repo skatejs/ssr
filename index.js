@@ -1,8 +1,16 @@
 require('undom/register');
+const { parseFragment } = require('parse5');
 
-const { document, Element, Node: { prototype: NodeProto } } = window;
+const ElementProto = Element.prototype;
+const NodeProto = Node.prototype;
 const { insertBefore, removeChild } = NodeProto;
+const { dispatchEvent } = ElementProto;
+const { keys, defineProperty: prop } = Object;
 const isConnected = Symbol();
+
+function expose (name, value) {
+  return global[name] = window[name] = value;
+}
 
 function connectNode (node) {
   if (node.connectedCallback && !node[isConnected]) {
@@ -24,19 +32,40 @@ function each (node, call) {
   } else {
     call(node);
   }
+  return node;
+}
+
+function translateParsed (parsed) {
+  let node;
+  const { attrs, childNodes, nodeName, value } = parsed;
+
+  if (nodeName === '#document-fragment') {
+    node = document.createDocumentFragment();
+  } else if (nodeName === '#text') {
+    node = document.createTextNode(value);
+  } else {
+    node = document.createElement(nodeName);
+    attrs.forEach(({ name, value }) => node.setAttribute(name, value));
+  }
+
+  if (childNodes) {
+    childNodes.forEach(c => node.appendChild(translateParsed(c)));
+  }
+
+  return node;
 }
 
 function patchCustomElements () {
   const customElementRegistry = {};
-  global.HTMLElement = window.customElements = {
+  expose('customElements', {
     define (name, func) {
-      Object.defineProperty(func.prototype, 'nodeName', { value: name });
+      prop(func.prototype, 'nodeName', { value: name.toUpperCase() });
       customElementRegistry[name] = func;
     },
     get (name) {
       return customElementRegistry[name];
     }
-  };
+  });
 
   const createElement = document.createElement.bind(document);
   document.createElement = function (name) {
@@ -46,32 +75,107 @@ function patchCustomElements () {
 }
 
 function patchDocumentFragment () {
-  DocumentFragment = class extends Node {};
+  expose('DocumentFragment', class extends Node {
+    get nodeName () {
+      return '#document-fragment';
+    }
+  });
+  document.createDocumentFragment = () => new DocumentFragment();
 }
 
 function patchElement () {
-  global.HTMLElement = window.HTMLElement = class extends Element {
+  ElementProto.dispatchEvent = function (evnt) {
+    evnt.target = this;
+    return dispatchEvent.call(this, evnt);
+  }
+  ElementProto.hasAttribute = function (name) {
+    return !!this.getAttribute(name);
+  };
+  prop(ElementProto, 'innerHTML', {
+    get () {
+      return this.childNodes.map(c => c.outerHTML || c.textContent).join('');
+    },
+    set (val) {
+      while (this.hasChildNodes()) {
+        this.removeChild(this.firstChild);
+      }
+      this.appendChild(translateParsed(parseFragment(val)));
+    }
+  });
+  prop(ElementProto, 'outerHTML', {
+    get () {
+      const { attributes, children, nodeName } = this;
+      const name = nodeName.toLowerCase();
+      return `<${name}${attributes.reduce((prev, { name, value }) => prev + ` ${name}="${value}"`, '')}>${this.innerHTML}</${name}>`;
+    },
+    set (val) {
+      throw new Error('Not implemented: set outerHTML');
+    }
+  });
+}
+
+function patchEvents () {
+  expose('CustomEvent', expose('Event', class extends Event {
+    constructor (evnt, opts = {}) {
+      super(evnt, opts);
+    }
+  }));
+}
+
+function patchHTMLElement () {
+  expose('HTMLElement', class extends Element {
     attachShadow () {
       const shadowRoot = document.createElement('shadow-root');
-      Object.defineProperty(this, 'shadowRoot', { value: shadowRoot });
+      prop(this, 'shadowRoot', { value: shadowRoot });
       return shadowRoot;
     }
-  }
+  });
 }
 
 function patchNode () {
+  Node.DOCUMENT_FRAGMENT_NODE = 11;
+  Node.ELEMENT_NODE = 1;
+  Node.TEXT_NODE = 3;
+
+  prop(NodeProto, 'textContent', {
+    get () {
+      return this.nodeValue || this.childNodes.map(c => c.textContent).join('');
+    },
+    set (val) {
+      this.nodeValue = val;
+    }
+  });
+
+  NodeProto.contains = function (node) {
+    if (this === node) {
+      return true;
+    }
+    for (let childNode of this.childNodes) {
+      if (childNode.contains(node)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  NodeProto.hasChildNodes = function () {
+    return this.childNodes.length;
+  }
+
   // Undom internally calls insertBefore in appendChild.
   NodeProto.insertBefore = function (newNode, refNode) {
-    const ret = insertBefore.call(this, newNode, refNode);
-    each(newNode, connectNode);
-    return ret;
+    return each(newNode, newNode => {
+      insertBefore.call(this, newNode, refNode);
+      connectNode(newNode);
+    });
   };
 
   // Undom internally calls removeChild in replaceChild.
   NodeProto.removeChild = function (refNode) {
-    const ret = removeChild.call(this, refNode);
-    each(refNode, disconnectNode);
-    return ret;
+    return each(refNode, refNode => {
+      removeChild.call(this, refNode);
+      disconnectNode(refNode);
+    });
   };
 }
 
@@ -107,6 +211,8 @@ function render (node, resolver) {
 patchCustomElements();
 patchDocumentFragment();
 patchElement();
+patchEvents();
+patchHTMLElement();
 patchNode();
 
 module.exports.render = render;

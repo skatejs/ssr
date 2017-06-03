@@ -26,7 +26,7 @@ describe('window', () => {
     });
 
     it('define should add a the nodeName to the customElement', () => {
-      expect(CustomElement.prototype.nodeName).toEqual('custom-element');
+      expect(CustomElement.prototype.nodeName).toEqual('CUSTOM-ELEMENT');
     });
 
     it('get should return the custom element', () => {
@@ -99,6 +99,19 @@ describe('Element', () => {
 
     it('mode: closed, should not create a shadowRoot property', () => {
 
+    });
+  });
+  
+  describe('innerHTML', () => {
+    it('should get innerHTML', () => {
+
+    });
+
+    it('should set innerHTML', () => {
+      const div = document.createElement('div');
+      const html = `<h1 id="yelling">Test</h1><section><p><span id="nested-span">Paragraph</span> 1.</p><p><span>Paragraph</span> 2.</p></section>`;
+      div.innerHTML = html;
+      expect(div.innerHTML).toEqual(html);
     });
   });
 });
