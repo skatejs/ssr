@@ -85,7 +85,7 @@ If you want to run your tests in Jest, you'll do the same thing as you would in 
 
 While the page can be rendered without JavaScript, it won't be pretty because there is no style emulation being done on the server. It's likely this *could* be done, but the cost-benefit ration at this point doesn't seem like it'd be worth it.
 
-You're limited to the subset of DOM methods available through Undom. Undom works well with Preact and SkateJS due to their mininmal overhead and limited native DOM interface usage.
+You're limited to the subset of DOM methods available through Undom, plus what we add on top of it (which is quite a bit at the moment). Undom works well with Preact and SkateJS due to their mininmal overhead and limited native DOM interface usage.
 
 There's currently [some work](https://github.com/tmpvar/jsdom/pull/1872) happening to get custom element and shadow DOM support in JSDOM. Once that lands, we'll have broader API support and we can start thikning about focusing this API on just serialisation and rehydration.
 
