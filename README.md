@@ -60,7 +60,7 @@ On the client, just inline your server-rendered string:
 
 ## Testing in Node
 
-All you need to do is `require('@skatejs/ssr')` in your environment and you're good to go.
+All you need to do is `require('@skatejs/ssr')` in your test environment before you test code and you're all set.
 
 ### Jest
 
