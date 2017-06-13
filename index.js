@@ -5,11 +5,12 @@ const ElementProto = Element.prototype;
 const NodeProto = Node.prototype;
 const { insertBefore, removeChild } = NodeProto;
 const { dispatchEvent } = ElementProto;
-const { keys, defineProperty: prop } = Object;
-const isConnected = Symbol();
+const { defineProperty: prop } = Object;
+const isConnected = Symbol('isConnected');
 
 function expose (name, value) {
-  return global[name] = window[name] = value;
+  global[name] = window[name] = value;
+  return value;
 }
 
 function connectNode (node) {
@@ -70,7 +71,9 @@ function patchCustomElements () {
   const createElement = document.createElement.bind(document);
   document.createElement = function (name) {
     const Ctor = window.customElements.get(name);
-    return Ctor ? new Ctor() : createElement(name);
+    const elem = Ctor ? new Ctor() : createElement(name);
+    prop(elem, 'localName', { value: name });
+    return elem;
   };
 }
 
@@ -84,12 +87,31 @@ function patchDocumentFragment () {
 }
 
 function patchElement () {
+  const { getAttribute, removeAttribute, setAttribute } = ElementProto;
   ElementProto.dispatchEvent = function (evnt) {
     evnt.target = this;
     return dispatchEvent.call(this, evnt);
-  }
+  };
+  ElementProto.getAttribute = function (name) {
+    const value = getAttribute.call(this, name);
+    return value == null ? null : value;
+  };
   ElementProto.hasAttribute = function (name) {
-    return !!this.getAttribute(name);
+    return this.getAttribute(name) !== null;
+  };
+  ElementProto.removeAttribute = function (name) {
+    const oldValue = this.getAttribute(name);
+    removeAttribute.call(this, name);
+    if (this.attributeChangedCallback) {
+      this.attributeChangedCallback(name, oldValue, null);
+    }
+  };
+  ElementProto.setAttribute = function (name, newValue) {
+    const oldValue = this.getAttribute(name);
+    setAttribute.call(this, name, newValue);
+    if (this.attributeChangedCallback) {
+      this.attributeChangedCallback(name, oldValue, newValue);
+    }
   };
   prop(ElementProto, 'innerHTML', {
     get () {
@@ -104,7 +126,7 @@ function patchElement () {
   });
   prop(ElementProto, 'outerHTML', {
     get () {
-      const { attributes, children, nodeName } = this;
+      const { attributes, nodeName } = this;
       const name = nodeName.toLowerCase();
       return `<${name}${attributes.reduce((prev, { name, value }) => prev + ` ${name}="${value}"`, '')}>${this.innerHTML}</${name}>`;
     },
@@ -119,7 +141,20 @@ function patchEvents () {
     constructor (evnt, opts = {}) {
       super(evnt, opts);
     }
+    initEvent (name, bubbles, cancelable) {
+      this.name = name;
+      this.bubbles = bubbles;
+      this.cancelable = cancelable;
+    }
+    initCustomEvent (name, bubbles, cancelable, detail) {
+      this.initEvent(name, bubbles, cancelable);
+      this.detail = detail;
+    }
   }));
+
+  document.createEvent = function (name) {
+    return new window[name]();
+  };
 }
 
 function patchHTMLElement () {
@@ -127,6 +162,7 @@ function patchHTMLElement () {
     attachShadow () {
       const shadowRoot = document.createElement('shadow-root');
       prop(this, 'shadowRoot', { value: shadowRoot });
+      prop(shadowRoot, 'parentNode', { value: shadowRoot });
       return shadowRoot;
     }
   });
@@ -160,7 +196,7 @@ function patchNode () {
 
   NodeProto.hasChildNodes = function () {
     return this.childNodes.length;
-  }
+  };
 
   // Undom internally calls insertBefore in appendChild.
   NodeProto.insertBefore = function (newNode, refNode) {
@@ -179,7 +215,6 @@ function patchNode () {
   };
 }
 
-
 // Serialisation
 
 function stringify (node) {
@@ -189,8 +224,8 @@ function stringify (node) {
   }
   const attrsAsString = Array.from(attributes || []).map(({ name, value }) => ` ${name}="${value}"`);
   const localName = nodeName.toLowerCase();
-  const shadowNodes = shadowRoot ? ssr(shadowRoot) : '';
-  const lightNodes = childNodes.map(ssr).join('');
+  const shadowNodes = shadowRoot ? stringify(shadowRoot) : '';
+  const lightNodes = childNodes.map(stringify).join('');
   const rehydrationScript = shadowRoot ? `<script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>` : '';
   return `<${localName}${attrsAsString}>${shadowNodes}${lightNodes}</${localName}>${rehydrationScript}`;
 }
