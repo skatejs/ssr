@@ -141,13 +141,13 @@ function patchEvents () {
     constructor (evnt, opts = {}) {
       super(evnt, opts);
     }
-    initEvent (name, bubbles, cancelable) {
-      this.name = name;
+    initEvent (type, bubbles, cancelable) {
       this.bubbles = bubbles;
       this.cancelable = cancelable;
+      this.type = type;
     }
-    initCustomEvent (name, bubbles, cancelable, detail) {
-      this.initEvent(name, bubbles, cancelable);
+    initCustomEvent (type, bubbles, cancelable, detail) {
+      this.initEvent(type, bubbles, cancelable);
       this.detail = detail;
     }
   }));
@@ -162,9 +162,9 @@ function patchHTMLElement () {
     attachShadow () {
       const shadowRoot = document.createElement('shadow-root');
       prop(this, 'shadowRoot', { value: shadowRoot });
-      prop(shadowRoot, 'parentNode', { value: shadowRoot });
+      prop(shadowRoot, 'parentNode', { value: this });
       return shadowRoot;
-    }
+    } 
   });
 }
 
