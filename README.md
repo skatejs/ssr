@@ -1,4 +1,4 @@
-# Server-side rendering and testing
+# Web component server-side rendering and testing
 
 [![Build Status](https://travis-ci.org/skatejs/ssr.svg?branch=master)](https://travis-ci.org/skatejs/ssr)
 
@@ -81,15 +81,21 @@ If you want to run your tests in Jest, you'll do the same thing as you would in 
 - Web crawlers can index both light and shadow DOM.
 - Selectors work through shadow roots (possible Selenium integration), though they won't be the same on the server as on the client.
 
-## Caveats
+## Notes
 
-While the page can be rendered without JavaScript, it won't be pretty because there is no style emulation being done on the server. It's likely this *could* be done, but the cost-benefit ration at this point doesn't seem like it'd be worth it.
+There's some limitations and workarounds that you should consider. Many of these will be addressed in the future.
+
+### Styling
+
+While the page can be rendered without JavaScript, it won't be pretty because there is no style emulation being done on the server **if you choose to use native Shadow DOM styling**. If you want it to look the same with or without Shadow DOM, you can use most any CSS in JS lib.
+
+### DOM API limitations
 
 You're limited to the subset of DOM methods available through Undom, plus what we add on top of it (which is quite a bit at the moment). Undom works well with Preact and SkateJS due to their mininmal overhead and limited native DOM interface usage.
 
 There's currently [some work](https://github.com/tmpvar/jsdom/pull/1872) happening to get custom element and shadow DOM support in JSDOM. Once that lands, we'll have broader API support and we can start thikning about focusing this API on just serialisation and rehydration.
 
-## Notes
+### Misc
 
 - Uses inline an `<script>` method for rehydration. This [seems](https://discourse.wicg.io/t/declarative-shadow-dom/1904/8) to be more performant and simplifies the usage for the consumer because there's no client code. This creates more weight to send to the client, but it doesn't make any assumptions on how the page is being rendered, other than you don't mess with its output. If a shared function were created, it would make an assumption on how and where you're using the rendered content, which at this point seems like we shouldn't have an opinion on.
 - Inline `<script>` tags use relative DOM accessors like `document.currentScript`, `previousElementSibling` and `firstElementChild`. Any HTML post-processing could affect the mileage of it, so beware.
