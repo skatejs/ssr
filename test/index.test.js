@@ -1,20 +1,22 @@
-const { render } = require('..');
+/** @jsx h */
+
+const { h } = require('@skatejs/val');
+const render = require('..');
 
 class CustomElement extends HTMLElement {
   constructor () {
     super();
     this.connectedCallback = jest.fn();
+    this.disconnectedCallback = jest.fn();
   }
 }
 window.customElements.define('custom-element', CustomElement);
 
-class Test {
-  constructor () {
-    this.connectedCallback = jest.fn();
-  }
-}
-
 describe('window', () => {
+  it('should work if re-included', () => {
+    require('..');
+  });
+
   it('Object', () => {
     expect(window.Object).toBeDefined();
     expect(window.Object).toEqual(global.Object);
@@ -119,5 +121,47 @@ describe('Element', () => {
 describe('HTMLElement', () => {
   it('should extend Element', () => {
     expect(window.HTMLElement).toBeDefined();
+  });
+});
+
+describe('render (serialisation)', () => {
+  it('should call the connected callback', () => {
+    const node = new CustomElement();
+    return render(node).then(() => {
+      expect(node.connectedCallback.mock.calls.length).toEqual(1);
+    });
+  });
+
+  it('should disconnect it after serialising', () => {
+    const node = new CustomElement();
+    return render(node).then(() => {
+      expect(node.disconnectedCallback.mock.calls.length).toEqual(1);
+    });
+  });
+
+  it('renders correctly', () => {
+    class Hello extends HTMLElement {
+      connectedCallback () {
+        const shadowRoot = this.attachShadow({ mode: 'open' });
+        shadowRoot.appendChild(<span>Hello, <x-yell><slot /></x-yell>!</span>);
+      }
+    }
+    class Yell extends HTMLElement {
+      connectedCallback () {
+        Promise.resolve().then(() => {
+          const shadowRoot = this.attachShadow({ mode: 'open' });
+          shadowRoot.appendChild(<strong><slot /></strong>);
+        });
+      }
+    }
+    customElements.define('x-hello', Hello);
+    customElements.define('x-yell', Yell);
+
+    const hello = new Hello();
+    hello.appendChild(document.createTextNode('World'));
+
+    return render(hello).then(r => {
+      expect(r).toMatchSnapshot();
+    });
   });
 });

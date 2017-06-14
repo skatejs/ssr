@@ -18,27 +18,33 @@ npm install @skatejs/ssr
 
 ## Usage
 
-*For all you haters, this example is using vanilla custom elements and shadow DOM in order to show that it can work with any web component library.*
+*This example is using vanilla custom elements and shadow DOM in order to show that it can work with any web component library.*
 
 On the server (`example.js`):
 
 ```js
-const { render } = require('./index');
-const { customElements, HTMLElement } = window;
+require('@skatejs/ssr/register');
+const render = require('@skatejs/ssr');
 
 class Hello extends HTMLElement {
   connectedCallback () {
     const shadowRoot = this.attachShadow({ mode: 'open' });
-    shadowRoot.appendChild(document.createTextNode('Hello, '));
-    shadowRoot.appendChild(document.createElement('slot'));
-    shadowRoot.appendChild(document.createTextNode('!'));
+    shadowRoot.innerHTML = '<span>Hello, <x-yell><slot></slot></x-yell>!</span>';
   }
 }
-
+class Yell extends HTMLElement {
+  connectedCallback () {
+    Promise.resolve().then(() => {
+      const shadowRoot = this.attachShadow({ mode: 'open' });
+      shadowRoot.innerHTML = '<strong><slot></slot></strong>';
+    });
+  }
+}
 customElements.define('x-hello', Hello);
+customElements.define('x-yell', Yell);
 
 const hello = new Hello();
-hello.appendChild(document.createTextNode('World'));
+hello.textContent = 'World';
 
 render(hello).then(console.log);
 ```
@@ -47,24 +53,31 @@ And then just `node` your server code:
 
 ```
 $ node example.js
-<x-hello><shadow-root>Hello, <slot></slot>!</shadow-root>World</x-hello><script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>
+<x-hello><shadow-root><span>Hello, <x-yell><shadow-root><strong><slot></slot></strong></shadow-root><slot></slot></x-yell><script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>!</span></shadow-root>World</x-hello><script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>
 ```
 
 On the client, just inline your server-rendered string:
 
 ```html
-<x-hello><shadow-root>Hello, <slot></slot>!</shadow-root>World</x-hello><script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>
+<x-hello><shadow-root><span>Hello, <x-yell><shadow-root><strong><slot></slot></strong></shadow-root><slot></slot></x-yell><script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>!</span></shadow-root>World</x-hello><script>var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);</script>
 ```
 
-[See it in action!](https://www.webpackbin.com/bins/-Kl27vKrFK82_BDrv6h4)
+[See it in action!](https://www.webpackbin.com/bins/-KmbUChOTvUHC-ME-RcV)
 
-## Testing in Node
+## Running in Node
 
-All you need to do is `require('@skatejs/ssr')` in your test environment before you test code and you're all set.
+If you want to run your code in Node, just require the registered environment before doing anything DOMish.
 
-### Jest
+```js
+// index.js
+require('@skatejs/ssr/register');
 
-If you want to run your tests in Jest, you'll do the same thing as you would in Node, but you'll also have to configure Jest to use the provided environment for Undom:
+// DOM stuff...
+```
+
+## Running in Jest
+
+If you want to run your tests in Jest, all you have to do is configure Jest to use the environment we've provided for it.
 
 ```js
 // package.json
@@ -104,7 +117,3 @@ There's currently [some work](https://github.com/tmpvar/jsdom/pull/1872) happeni
   - Requires client to include a script (friction).
   - Pollutes the custom element namespace, or requires the consumer to manually register (more friction).
 - Shadow root content, prior to being hydrated, is *not* inert so that it can be found by `querySelector` and crawlers. Putting it inside of a `<template>` tag means that it's not participating in the document and the aforementioned wouldn't work, thus negating the benefits of SSR altogether.
-
-## Controversial opinion
-
-Require JavaScript for your users and don't care how things look if it's disabled.
