@@ -3,7 +3,8 @@
   "description": "Server-side render your web components.",
   "files": [
     "index.js",
-    "jest.js"
+    "jest.js",
+    "register.js"
   ],
   "scripts": {
     "test": "jest"
