@@ -88,6 +88,10 @@ If you want to run your tests in Jest, all you have to do is configure Jest to u
 }
 ```
 
+## Running with other Node / DOM implementations
+
+There's other implementations out there such as [Domino](https://github.com/fgnass/domino) and [JSDOM](https://github.com/tmpvar/jsdom). They don't yet have support for custom elements or shadow DOM, but if they did, then you would use this library in the same way, just without requiring `@skatejs/ssr/register`. With some implementations that don't yet support web components, requiring `@skatejs/ssr/register` may work, but your mileage may vary. Currently only Undom is officially supported.
+
 ## Why
 
 - Lightweight rehydration of shadow content.
