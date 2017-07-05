@@ -2,7 +2,9 @@ require('babel-register')({
   presets: ['react', 'stage-0'].map(m => require(`babel-preset-${m}`))
 });
 
-const { render } = require('../');
+require('../register');
+const render = require('../index');
+
 const Hapi = require('hapi');
 const fs = require('fs');
 
