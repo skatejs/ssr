@@ -159,17 +159,17 @@ function patchEvents () {
 
 function patchHTMLElement () {
   function HTMLElement() {
-      let newTarget = this.constructor;
-      return Reflect.construct(Element, [], newTarget);
+    let newTarget = this.constructor;
+    return Reflect.construct(Element, [], newTarget);
   }
   HTMLElement.prototype = Object.create(Element.prototype, {
-      constructor: {value: HTMLElement, configurable: true, writable: true},
+    constructor: { value: HTMLElement, configurable: true, writable: true }
   });
   HTMLElement.prototype.attachShadow = function() {
-      const shadowRoot = document.createElement('shadow-root');
-      prop(this, 'shadowRoot', { value: shadowRoot });
-      prop(shadowRoot, 'parentNode', { value: this });
-      return shadowRoot;
+    const shadowRoot = document.createElement('shadow-root');
+    prop(this, 'shadowRoot', { value: shadowRoot });
+    prop(shadowRoot, 'parentNode', { value: this });
+    return shadowRoot;
   };
   expose('HTMLElement', HTMLElement);
 }
