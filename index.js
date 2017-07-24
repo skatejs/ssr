@@ -10,7 +10,7 @@ function stringify (node, { funcName }) {
   const attrsAsString = Array.from(attributes || []).map(({ name, value }) => ` ${name}="${value}"`);
   const localName = nodeName.toLowerCase();
   const shadowNodes = shadowRoot ? stringify(shadowRoot, { funcName }) : '';
-  const lightNodes = childNodes.map(stringify, { funcName }).join('');
+  const lightNodes = childNodes.map(node => stringify(node, { funcName })).join('');
   const rehydrationScript = shadowRoot ? `<script>${funcName}()</script>` : '';
   return `<${localName}${attrsAsString}>${shadowNodes}${lightNodes}</${localName}>${rehydrationScript}`;
 }
