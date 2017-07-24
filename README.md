@@ -62,7 +62,7 @@ On the client, just inline your server-rendered string:
 <script>function __ssr(){var a=document.currentScript.previousElementSibling,b=a.firstElementChild;a.removeChild(b);for(var c=a.attachShadow({mode:"open"});b.hasChildNodes();)c.appendChild(b.firstChild);}</script><x-hello><shadow-root><span>Hello, <x-yell><shadow-root><strong><slot></slot></strong></shadow-root><slot></slot></x-yell><script>__ssr()</script>!</span></shadow-root>World</x-hello><script>__ssr()</script>
 ```
 
-[See it in action!](https://www.webpackbin.com/bins/-KmbUChOTvUHC-ME-RcV)
+[See it in action!](http://jsbin.com/cilocowozu/2/edit?html,output)
 
 ## Running in Node
 
