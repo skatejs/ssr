@@ -15,7 +15,7 @@
     "skatejs": "^5.0.0-alpha.7",
     "undom": "^0.3.3"
   },
-  "version": "0.5.2",
+  "version": "0.6.0",
   "devDependencies": {
     "@skatejs/val": "^0.3.1",
     "babel-preset-react": "^6.24.1",
