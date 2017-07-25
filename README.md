@@ -116,7 +116,7 @@ There's currently [some work](https://github.com/tmpvar/jsdom/pull/1872) happeni
 
 - Performance benchmarks focus on comparing a baseline to different methods of rehydration. Thanks to @robdodson for sharing some code that helped me flesh these out. Spin up a static server and load them up for more details.
 - Inline `<script>` tags use relative DOM accessors like `document.currentScript`, `previousElementSibling` and `firstElementChild`. Any HTML post-processing could affect the mileage of it, so beware.
-- Inline `<script>` method is currently the fastest overall method of rehydration.
+- Inline `<script>` method is currently the fastest overall method of rehydration. This has been discussed [elsewhere](https://discourse.wicg.io/t/declarative-shadow-dom/1904/8) but the difference between methods seemed more pronounced, possibly because things were deduped in a single `<template>` which isn't really possible because most components will be rendered in a different state. Also, cralers don't read content in `<template>` elements, so we need to store it in non-inert blocks.
 - Using a custom `<shadow-root>` element seems acceptable for performance, however there's some problems with delivering it:
   - Do we ship an ES5 or ES6 component? ES5 requires transpilation and shims. ES6 excludes older browsers.
   - We could make the consumer ship the element themselves and provide helpers they call out to, but that's more friction.
