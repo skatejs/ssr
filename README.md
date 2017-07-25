@@ -114,10 +114,11 @@ There's currently [some work](https://github.com/tmpvar/jsdom/pull/1872) happeni
 
 ### Misc
 
-- Uses inline an `<script>` method for rehydration. This [seems](https://discourse.wicg.io/t/declarative-shadow-dom/1904/8) to be more performant and simplifies the usage for the consumer because there's no client code. This creates more weight to send to the client, but it doesn't make any assumptions on how the page is being rendered, other than you don't mess with its output. If a shared function were created, it would make an assumption on how and where you're using the rendered content, which at this point seems like we shouldn't have an opinion on.
+- Performance benchmarks focus on comparing a baseline to different methods of rehydration. Thanks to @robdodson for sharing some code that helped me flesh these out. Spin up a static server and load them up for more details.
 - Inline `<script>` tags use relative DOM accessors like `document.currentScript`, `previousElementSibling` and `firstElementChild`. Any HTML post-processing could affect the mileage of it, so beware.
-- Could use a `<shadow-root>` element, but that would mean:
-  - Probable performance hit (see above).
-  - Requires client to include a script (friction).
-  - Pollutes the custom element namespace, or requires the consumer to manually register (more friction).
+- Inline `<script>` method is currently the fastest overall method of rehydration.
+- Using a custom `<shadow-root>` element seems acceptable for performance, however there's some problems with delivering it:
+  - Do we ship an ES5 or ES6 component? ES5 requires transpilation and shims. ES6 excludes older browsers.
+  - We could make the consumer ship the element themselves and provide helpers they call out to, but that's more friction.
+  - This is probably a better method once we can assume custom elements / ES2015 support in all targeted browsers.
 - Shadow root content, prior to being hydrated, is *not* inert so that it can be found by `querySelector` and crawlers. Putting it inside of a `<template>` tag means that it's not participating in the document and the aforementioned wouldn't work, thus negating the benefits of SSR altogether.
