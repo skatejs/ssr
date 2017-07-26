@@ -113,6 +113,29 @@ function patchElement () {
       this.attributeChangedCallback(name, oldValue, newValue);
     }
   };
+  ElementProto.assignedNodes = function () {
+    if (this.nodeName !== 'SLOT') {
+      throw new Error('Non-standard: assignedNodes() called on non-slot element.');
+    }
+
+    const name = this.getAttribute('name') || this.name;
+    
+    let node = this, host;
+    while (node = node.parentNode) {
+      if (node.host) {
+        host = node.host;
+        break;
+      }
+    }
+
+    return host
+      ? host.childNodes.filter(n => {
+          return name
+            ? n.getAttribute && n.getAttribute('slot') === name
+            : !n.getAttribute || !n.getAttribute('slot')
+        })
+      : [];
+  };
   prop(ElementProto, 'innerHTML', {
     get () {
       return this.childNodes.map(c => c.outerHTML || c.textContent).join('');
@@ -165,9 +188,11 @@ function patchHTMLElement () {
   HTMLElement.prototype = Object.create(Element.prototype, {
     constructor: { value: HTMLElement, configurable: true, writable: true }
   });
-  HTMLElement.prototype.attachShadow = function() {
+  HTMLElement.prototype.attachShadow = function({ mode }) {
     const shadowRoot = document.createElement('shadow-root');
     prop(this, 'shadowRoot', { value: shadowRoot });
+    prop(shadowRoot, 'host', { value: this });
+    prop(shadowRoot, 'mode', { value: mode });
     prop(shadowRoot, 'parentNode', { value: this });
     return shadowRoot;
   };
