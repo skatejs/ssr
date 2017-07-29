@@ -5,14 +5,28 @@ exports[`render (serialisation) renders correctly 1`] = `
     <script>
       function __ssr () {
         const script = document.currentScript;
-        const host = script.previousElementSibling;
-        const fakeShadowRoot = host.firstElementChild;
-        const slots = host.getElementsByTagName('slot');
-        const move = (from, to) => { while (from.firstChild) to.appendChild(from.firstChild) };
+        const fakeShadowRoot = script.parentNode;
+        const host = fakeShadowRoot.parentNode;
+        const move = (from, to) => { while (from && from.firstChild) to.appendChild(from.firstChild) };
+
+        // This cleans up the resulting DOM but also seems to have a positive impact on performance.
+        fakeShadowRoot.removeChild(script);
+
+        // First thing we do is remove the fake shadow root so we can attach a shadow root safely.
+        host.removeChild(fakeShadowRoot);
+
+        // Create the real shadow root once we've cleaned up.
+        const realShadowRoot = host.attachShadow({ mode: 'open' });
+
+        // Then we can move stuff over from the fake root to the real one.
+        move(fakeShadowRoot, realShadowRoot);
+
+        // We must find the slots *after* the shadow root is hydrated so we don't get any unwanted ones.
+        const slots = realShadowRoot.querySelectorAll('slot');
 
         // At each Shadow Root, we only care about its slots, not composed slots,
-        // therefore we need to move the children of top level slots, but no others
-        // Also can't 'move' in loop as that will mutate the DOM and ruin the 
+        // therefore we need to move the children of top level slots, but not others
+        // Also can't 'move' in loop as that will mutate the DOM and ruin the
         // 'contains' checks for subsequent slots.
         const topLevelSlots = (() => {
           let top = [],
@@ -26,26 +40,14 @@ exports[`render (serialisation) renders correctly 1`] = `
             if (!(ref && ref.contains(slot))) {
               top.push(slot);
               ref = slot;
-            }        
+            }
           }
 
           return top;
         })();
 
         topLevelSlots.forEach(slot => move(slot, host));
-
-        // // Removing the script speeds up rendering by a few hundred ms when
-        // // not optimised and only a few when optimised.
-        script.parentNode.removeChild(script);
-
-        // The fastest overall method is to simply use innerHTML. This seems to be
-        // faster when not optimised (by about 50%) but is slightly slower when
-        // optimised compared to traversing the fake shadow root and appending each
-        // element to the real one:
-        const realShadowRoot = host.attachShadow({ mode: 'open' });
-        move(fakeShadowRoot, realShadowRoot);
-        host.removeChild(fakeShadowRoot);
       }
     </script>
-  <x-hello><shadow-root><span>Hello, <x-yell><shadow-root><strong><slot><slot>World</slot></slot></strong></shadow-root></x-yell><script>__ssr()</script>!</span></shadow-root></x-hello><script>__ssr()</script>"
+  <x-hello><shadow-root><span>Hello, <x-yell><shadow-root><strong><slot><slot>World</slot></slot></strong><script>__ssr()</script></shadow-root></x-yell>!</span><script>__ssr()</script></shadow-root></x-hello>"
 `;
