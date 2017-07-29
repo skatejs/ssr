@@ -1,16 +1,30 @@
-function ssrScript (funcName) {
+function ssrScript(funcName) {
   return `
     <script>
       function __ssr () {
         const script = document.currentScript;
-        const host = script.previousElementSibling;
-        const fakeShadowRoot = host.firstElementChild;
-        const slots = host.getElementsByTagName('slot');
-        const move = (from, to) => { while (from.firstChild) to.appendChild(from.firstChild) };
+        const fakeShadowRoot = script.parentNode;
+        const host = fakeShadowRoot.parentNode;
+        const move = (from, to) => { while (from && from.firstChild) to.appendChild(from.firstChild) };
+
+        // This cleans up the resulting DOM but also seems to have a positive impact on performance.
+        fakeShadowRoot.removeChild(script);
+
+        // First thing we do is remove the fake shadow root so we can attach a shadow root safely.
+        host.removeChild(fakeShadowRoot);
+
+        // Create the real shadow root once we've cleaned up.
+        const realShadowRoot = host.attachShadow({ mode: 'open' });
+
+        // Then we can move stuff over from the fake root to the real one.
+        move(fakeShadowRoot, realShadowRoot);
+
+        // We must find the slots *after* the shadow root is hydrated so we don't get any unwanted ones.
+        const slots = realShadowRoot.querySelectorAll('slot');
 
         // At each Shadow Root, we only care about its slots, not composed slots,
-        // therefore we need to move the children of top level slots, but no others
-        // Also can't 'move' in loop as that will mutate the DOM and ruin the 
+        // therefore we need to move the children of top level slots, but not others
+        // Also can't 'move' in loop as that will mutate the DOM and ruin the
         // 'contains' checks for subsequent slots.
         const topLevelSlots = (() => {
           let top = [],
@@ -24,42 +38,31 @@ function ssrScript (funcName) {
             if (!(ref && ref.contains(slot))) {
               top.push(slot);
               ref = slot;
-            }        
+            }
           }
 
           return top;
         })();
 
         topLevelSlots.forEach(slot => move(slot, host));
-
-        // // Removing the script speeds up rendering by a few hundred ms when
-        // // not optimised and only a few when optimised.
-        script.parentNode.removeChild(script);
-
-        // The fastest overall method is to simply use innerHTML. This seems to be
-        // faster when not optimised (by about 50%) but is slightly slower when
-        // optimised compared to traversing the fake shadow root and appending each
-        // element to the real one:
-        const realShadowRoot = host.attachShadow({ mode: 'open' });
-        move(fakeShadowRoot, realShadowRoot);
-        host.removeChild(fakeShadowRoot);
       }
     </script>
   `;
 }
 
-function stringify (node, opts) {
+function stringify(node, opts) {
   const { attributes = [], childNodes, nodeName, nodeValue, shadowRoot } = node;
 
-  if (nodeName === '#text') {
+  if (nodeName === "#text") {
     return nodeValue;
   }
 
   const localName = nodeName.toLowerCase();
 
-  if (localName === 'slot') {
-    let currentNode = node, host;
-    while (currentNode = currentNode.parentNode) {
+  if (localName === "slot") {
+    let currentNode = node,
+      host;
+    while ((currentNode = currentNode.parentNode)) {
       if (currentNode.host) {
         host = currentNode.host;
         break;
@@ -80,31 +83,45 @@ function stringify (node, opts) {
     });
 
     if (!hasAssignedNodes) {
-      attributes.push({ name: 'default', value: '' });
+      attributes.push({ name: "default", value: "" });
     }
 
-    return `<slot${stringifyAttributes(attributes)}>${stringifyAll(nodesToRender, opts)}</slot>`;
+    return `<slot${stringifyAttributes(attributes)}>${stringifyAll(
+      nodesToRender,
+      opts
+    )}</slot>`;
   }
 
-  const shadowNodes = shadowRoot ? stringify(shadowRoot, Object.assign({}, opts, { host: node })) : '';
+  const shadowNodes = shadowRoot
+    ? stringify(shadowRoot, Object.assign({}, opts, { host: node }))
+    : "";
   const lightNodes = stringifyAll(childNodes, opts);
-  const rehydrationScript = shadowRoot ? `<script>${opts.funcName}()</script>` : '';
-  return `<${localName}${stringifyAttributes(attributes)}>${shadowNodes}${lightNodes}</${localName}>${rehydrationScript}`;
+  const rehydrationScript =
+    nodeName === "SHADOW-ROOT" ? `<script>${opts.funcName}()</script>` : "";
+  return `<${localName}${stringifyAttributes(
+    attributes
+  )}>${shadowNodes}${lightNodes}${rehydrationScript}</${localName}>`;
 }
 
-function stringifyAll (nodes, opts) {
-  return nodes.map(node => stringify(node, opts)).join('');
+function stringifyAll(nodes, opts) {
+  return nodes.map(node => stringify(node, opts)).join("");
 }
 
-function stringifyAttributes (attributes) {
-  return Array.from(attributes || []).map(({ name, value }) => ` ${name}="${value}"`);
+function stringifyAttributes(attributes) {
+  return Array.from(attributes || []).map(
+    ({ name, value }) => ` ${name}="${value}"`
+  );
 }
 
-function render (node, opts) {
-  const { funcName, resolver } = Object.assign({}, {
-    funcName: '__ssr',
-    resolver: setTimeout
-  }, opts);
+function render(node, opts) {
+  const { funcName, resolver } = Object.assign(
+    {},
+    {
+      funcName: "__ssr",
+      resolver: setTimeout
+    },
+    opts
+  );
   document.body.appendChild(node);
   return new Promise(resolve => {
     resolver(() => {
