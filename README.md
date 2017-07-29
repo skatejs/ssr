@@ -100,7 +100,13 @@ There's other implementations out there such as [Domino](https://github.com/fgna
 
 ## Notes
 
-There's some limitations and workarounds that you should consider. Many of these will be addressed in the future.
+The priorities of this library are as follows:
+
+1. Crawlable content without JavaScript enabled.
+2. Crawlable content if JavaScript is executed.
+3. Immediate rehydration to give the appearance of fast loading even if you have't loaded your custom element definitions yet.
+
+**We are not targeting users that have JavaScript disabled. This *might* happen in the future. You can possibly get around this if you use CSS in JS, but we haven't tried it. YMMV.**
 
 ### Styling
 
