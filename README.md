@@ -122,3 +122,4 @@ There's currently [some work](https://github.com/tmpvar/jsdom/pull/1872) happeni
   - We could make the consumer ship the element themselves and provide helpers they call out to, but that's more friction.
   - This is probably a better method once we can assume custom elements / ES2015 support in all targeted browsers.
 - Shadow root content, prior to being hydrated, is *not* inert so that it can be found by `querySelector` and crawlers. Putting it inside of a `<template>` tag means that it's not participating in the document and the aforementioned wouldn't work, thus negating the benefits of SSR altogether.
+- Using invalid HTML, such as putting a `<div />` in a `<p />` tag could result in broken rehydration because the browser may try and "fix" the incorrect line, thus making things out of sync with what the rehydration script expects.
