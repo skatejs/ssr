@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
+    "@skatejs/val": "^0.3.1",
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "babel-register": "^6.24.1",
     "hapi": "^16.1.1",
     "preact": "^8.1.0",
-    "skatejs": "^5.0.0-alpha.9",
+    "skatejs": "^5.0.0-alpha.12",
     "undom": "^0.3.3"
   },
   "devDependencies": {},

@@ -2,6 +2,10 @@
 # yarn lockfile v1
 
 
+"@skatejs/val@^0.3.1":
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@skatejs/val/-/val-0.3.1.tgz#1e043fdcd22ac3d1deab69ef7432314f38ce9f98"
+
 accept@2.x.x:
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/accept/-/accept-2.1.4.tgz#887af54ceee5c7f4430461971ec400c61d09acbb"
@@ -738,9 +742,9 @@ shot@3.x.x:
     hoek "4.x.x"
     joi "10.x.x"
 
-skatejs@^5.0.0-alpha.9:
-  version "5.0.0-alpha.9"
-  resolved "https://registry.yarnpkg.com/skatejs/-/skatejs-5.0.0-alpha.9.tgz#606ea8f2d333fcc623ab02afad901bc7f52e0fcd"
+skatejs@^5.0.0-alpha.12:
+  version "5.0.0-alpha.12"
+  resolved "https://registry.yarnpkg.com/skatejs/-/skatejs-5.0.0-alpha.12.tgz#644a4a2b01877a13b5e24b88a6e9f1e1f41f958c"
 
 slash@^1.0.0:
   version "1.0.0"

@@ -100,7 +100,13 @@ There's other implementations out there such as [Domino](https://github.com/fgna
 
 ## Notes
 
-There's some limitations and workarounds that you should consider. Many of these will be addressed in the future.
+The priorities of this library are as follows:
+
+1. Crawlable content without JavaScript enabled.
+2. Crawlable content if JavaScript is executed.
+3. Immediate rehydration to give the appearance of fast loading even if you have't loaded your custom element definitions yet.
+
+**We are not targeting users that have JavaScript disabled. This *might* happen in the future. You can possibly get around this if you use CSS in JS, but we haven't tried it. YMMV.**
 
 ### Styling
 
@@ -122,3 +128,4 @@ There's currently [some work](https://github.com/tmpvar/jsdom/pull/1872) happeni
   - We could make the consumer ship the element themselves and provide helpers they call out to, but that's more friction.
   - This is probably a better method once we can assume custom elements / ES2015 support in all targeted browsers.
 - Shadow root content, prior to being hydrated, is *not* inert so that it can be found by `querySelector` and crawlers. Putting it inside of a `<template>` tag means that it's not participating in the document and the aforementioned wouldn't work, thus negating the benefits of SSR altogether.
+- Using invalid HTML, such as putting a `<div />` in a `<p />` tag could result in broken rehydration because the browser may try and "fix" the incorrect line, thus making things out of sync with what the rehydration script expects.
