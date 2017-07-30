@@ -1,11 +1,7 @@
 {
   "name": "@skatejs/ssr",
   "description": "Server-side render your web components.",
-  "files": [
-    "index.js",
-    "jest.js",
-    "register.js"
-  ],
+  "files": ["perf", "index.js", "jest.js", "register.js"],
   "scripts": {
     "test": "jest"
   },
@@ -23,9 +19,7 @@
     "jest-environment-node": "^20.0.3"
   },
   "babel": {
-    "presets": [
-      "react"
-    ]
+    "presets": ["react"]
   },
   "jest": {
     "testEnvironment": "./jest"
