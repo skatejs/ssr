@@ -1,5 +1,7 @@
 const { minify } = require('uglify-es');
 
+const { code: minified } = minify(rehydrate.toString());
+
 /**
  * Client side rehydration script. 
  * This will get stringified, so it cannot rely on any external scope
@@ -52,12 +54,10 @@ function rehydrate() {
 }
 
 module.exports = function (funcName) {
-  const asString = rehydrate.toString().replace(
+  const customName = minified.replace(
     `function ${rehydrate.name}`,
     `function ${funcName}`
   );
 
-  const { code: minified } = minify(asString);
-
-  return `<script>${minified}</script>`;
+  return `<script>${customName}</script>`;
 }
