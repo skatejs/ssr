@@ -1,7 +1,13 @@
 {
   "name": "@skatejs/ssr",
   "description": "Server-side render your web components.",
-  "files": ["perf", "index.js", "jest.js", "register.js", "rehydrate.js"],
+  "files": [
+    "perf",
+    "index.js",
+    "jest.js",
+    "register.js",
+    "rehydrate.js"
+  ],
   "scripts": {
     "test": "jest"
   },
@@ -12,7 +18,7 @@
     "uglify-es": "^3.0.27",
     "undom": "^0.3.3"
   },
-  "version": "0.6.3",
+  "version": "0.6.4",
   "devDependencies": {
     "@skatejs/val": "^0.3.1",
     "babel-preset-react": "^6.24.1",
@@ -20,7 +26,9 @@
     "jest-environment-node": "^20.0.3"
   },
   "babel": {
-    "presets": ["react"]
+    "presets": [
+      "react"
+    ]
   },
   "jest": {
     "testEnvironment": "./jest"
