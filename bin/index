@@ -1,0 +1,48 @@
+#!/usr/bin/env node
+
+require("babel-register");
+require("../register");
+
+const render = require("..");
+const glob = require("glob");
+const args = require("yargs").argv;
+const fs = require("fs");
+const mkdirp = require("mkdirp");
+const path = require("path");
+
+const out = args.out || "static";
+const props = args.props;
+const src = args.src || "src/**/*.js";
+const suffix = args.suffix || "html";
+
+glob(src, (err, files) => {
+  files.forEach(file => {
+    const reqd = require(path.resolve(file));
+    const Page = reqd.default || reqd;
+
+    if (typeof Page !== "function") {
+      throw new Error(`${file} must export a constructor.`);
+    }
+
+    const page = new Page();
+
+    if (props) {
+      Object.assign(page, JSON.parse(props));
+    }
+
+    render(page).then(rendered => {
+      const basename = path.basename(file);
+      const namePart = basename.split(".");
+
+      namePart.pop();
+
+      const destName = `${namePart.join(".") || "index"}.${suffix}`;
+      const destPath = path.join(process.cwd(), out);
+      mkdirp(destPath, () => {
+        fs.writeFile(path.join(destPath, destName), rendered, () => {
+          console.log(`${file} -> ${path.join(out, destName)}`);
+        });
+      });
+    });
+  });
+});
