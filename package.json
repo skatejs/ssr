@@ -3,6 +3,7 @@
   "description": "Server-side render your web components.",
   "bin": "./bin/index",
   "files": [
+    "bin",
     "perf",
     "index.js",
     "jest.js",
@@ -31,9 +32,7 @@
     "jest-environment-node": "^20.0.3"
   },
   "babel": {
-    "presets": [
-      "react"
-    ]
+    "presets": ["react"]
   },
   "jest": {
     "testEnvironment": "./jest"
