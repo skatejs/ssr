@@ -1,9 +1,9 @@
-const { minify } = require('uglify-es');
+const { minify } = require("uglify-es");
 
 const { code: minified } = minify(rehydrate.toString());
 
 /**
- * Client side rehydration script. 
+ * Client side rehydration script.
  * This will get stringified, so it cannot rely on any external scope
  * @return {undefined}
  */
@@ -11,7 +11,9 @@ function rehydrate() {
   const script = document.currentScript;
   const fakeShadowRoot = script.parentNode;
   const host = fakeShadowRoot.parentNode;
-  const move = (from, to) => { while (from && from.firstChild) to.appendChild(from.firstChild) };
+  const move = (from, to) => {
+    while (from && from.firstChild) to.appendChild(from.firstChild);
+  };
 
   // This cleans up the resulting DOM but also seems to have a positive impact on performance.
   fakeShadowRoot.removeChild(script);
@@ -20,13 +22,13 @@ function rehydrate() {
   host.removeChild(fakeShadowRoot);
 
   // Create the real shadow root once we've cleaned up.
-  const realShadowRoot = host.attachShadow({ mode: 'open' });
+  const realShadowRoot = host.attachShadow({ mode: "open" });
 
   // Then we can move stuff over from the fake root to the real one.
   move(fakeShadowRoot, realShadowRoot);
 
   // We must find the slots *after* the shadow root is hydrated so we don't get any unwanted ones.
-  const slots = realShadowRoot.querySelectorAll('slot');
+  const slots = realShadowRoot.querySelectorAll("slot");
 
   // At each Shadow Root, we only care about its slots, not composed slots,
   // therefore we need to move the children of top level slots, but not others
@@ -53,11 +55,6 @@ function rehydrate() {
   topLevelSlots.forEach(slot => move(slot, host));
 }
 
-module.exports = function (funcName) {
-  const customName = minified.replace(
-    `function ${rehydrate.name}`,
-    `function ${funcName}`
-  );
-
-  return `<script>${customName}</script>`;
-}
+module.exports = function(funcName) {
+  return minified.replace(`function ${rehydrate.name}`, `function ${funcName}`);
+};

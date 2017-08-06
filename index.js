@@ -1,4 +1,4 @@
-const ssrScript = require('./rehydrate');
+const ssrScript = require("./rehydrate");
 
 function stringify(node, opts) {
   const { attributes = [], childNodes, nodeName, nodeValue, shadowRoot } = node;
@@ -7,7 +7,7 @@ function stringify(node, opts) {
     return nodeValue;
   }
 
-  const localName = nodeName.toLowerCase();
+  const localName = nodeName === "#document" ? "html" : nodeName.toLowerCase();
 
   if (localName === "slot") {
     let currentNode = node,
@@ -64,6 +64,7 @@ function stringifyAttributes(attributes) {
 }
 
 function render(node, opts) {
+  const isDocument = node == document;
   const { funcName, resolver } = Object.assign(
     {},
     {
@@ -72,11 +73,29 @@ function render(node, opts) {
     },
     opts
   );
-  document.body.appendChild(node);
+  if (!isDocument) {
+    document.body.appendChild(node);
+  }
   return new Promise(resolve => {
     resolver(() => {
-      resolve(ssrScript(funcName) + stringify(node, { funcName }));
-      document.body.removeChild(node);
+      let prefix = "";
+      let ssrScriptElement = document.createElement("script");
+      const ssrScriptString = ssrScript(funcName);
+
+      if (isDocument) {
+        ssrScriptElement.textContent = ssrScriptString;
+        document.head.appendChild(ssrScriptElement);
+      } else {
+        prefix = `<script>${ssrScriptString}</script>`;
+      }
+
+      resolve(prefix + stringify(node, { funcName }));
+
+      if (isDocument) {
+        document.head.removeChild(ssrScriptElement);
+      } else {
+        document.body.removeChild(node);
+      }
     });
   });
 }

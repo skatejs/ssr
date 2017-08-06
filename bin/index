@@ -10,6 +10,7 @@ const fs = require("fs");
 const mkdirp = require("mkdirp");
 const path = require("path");
 
+const full = args.hasOwnProperty("full");
 const out = args.out || "static";
 const props = args.props;
 const src = args.src || "src/**/*.js";
@@ -26,11 +27,15 @@ glob(src, (err, files) => {
 
     const page = new Page();
 
+    if (full) {
+      document.body.appendChild(page);
+    }
+
     if (props) {
       Object.assign(page, JSON.parse(props));
     }
 
-    render(page).then(rendered => {
+    render(full ? document : page).then(rendered => {
       const basename = path.basename(file);
       const namePart = basename.split(".");
 
