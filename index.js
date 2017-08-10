@@ -1,4 +1,4 @@
-const ssrScript = require("./rehydrate");
+const ssrScript = require("./rehydrate").stringify;
 
 function stringify(node, opts) {
   const { attributes = [], childNodes, nodeName, nodeValue, shadowRoot } = node;

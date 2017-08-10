@@ -55,6 +55,8 @@ function rehydrate() {
   topLevelSlots.forEach(slot => move(slot, host));
 }
 
-module.exports = function(funcName) {
+module.exports.rehydrate = rehydrate;
+
+module.exports.stringify = function(funcName) {
   return minified.replace(`function ${rehydrate.name}`, `function ${funcName}`);
 };
