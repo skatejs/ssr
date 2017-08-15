@@ -1,14 +1,20 @@
 #!/usr/bin/env node
 
-require("babel-register");
+const path = require("path");
+const args = require("yargs").argv;
+const babelConfig = (() => {
+  try {
+    return require(path.join(process.cwd(), args.babel));
+  } catch (e) {}
+})();
+
+require("babel-register")(babelConfig);
 require("../register");
 
 const render = require("..");
 const glob = require("glob");
-const args = require("yargs").argv;
 const fs = require("fs");
 const mkdirp = require("mkdirp");
-const path = require("path");
 
 const full = args.hasOwnProperty("full");
 const out = args.out || "static";
