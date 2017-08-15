@@ -126,6 +126,12 @@ There's other implementations out there such as [Domino](https://github.com/fgna
 - Web crawlers can index both light and shadow DOM.
 - Selectors work through shadow roots (possible Selenium integration), though they won't be the same on the server as on the client.
 
+## The future
+
+The definition of success for this library is if it can be made mostly redundant. Things like a DOM implementation in Node (JSDOM / UnDOM, etc) are still necessary. The static-site generation will probably still be a thing. However, we hope that the serialisation and rehydration of Shadow DOM can be spec'd - in some way - and standardised API for doing so makes it's way to the platform.
+
+Serialisation may still be done in a Node DOM implementation, but it'd be great to see it standardised beacuse it is tightly coupled to the rehydration step on the client. This also helps to ensure that if an imperative distrubution API ever makes its way into the spec, that both serialisation and rehydration may be accounted for.
+
 ## Notes
 
 The priorities of this library are as follows:
