@@ -9,6 +9,7 @@ This repo contains all you need to server-side render your web components and ru
 - No client code required.
 - Great for rendering out static sites from components.
 - Run your tests in Jest!
+- Statically generate JS files to HTML files.
 
 ## Installing
 
@@ -87,6 +88,25 @@ If you want to run your tests in Jest, all you have to do is configure Jest to u
   }
 }
 ```
+
+## Static-site generation
+
+This package ships with a command that you can use to statically generate a site from JS files.
+
+- It uses babel-register to parse your JS files.
+- Each JS file must have a default export that is a custom element.
+
+```sh
+ssr --out public --src path/to/site/**/*.js
+```
+
+Options are:
+
+- `--babel` - Path to custom babel config. Uses `require()` to load relative to `process.cwd()`. Defaults to `.babelrc` / `package.json` field.
+- `--out` - The directory to place the statically rendered files.
+- `--props` - A JSON object of custom props to assign to the custom elements before they're rendered.
+- `--src` - A glob for the source files to statically render to `--out`.
+- `--suffix` - The suffix to put on the output files. Defaults to `html`;
 
 ## Running with other Node / DOM implementations
 
