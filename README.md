@@ -108,6 +108,14 @@ Options are:
 - `--src` - A glob for the source files to statically render to `--out`.
 - `--suffix` - The suffix to put on the output files. Defaults to `html`;
 
+### Watching files and generating them in dev mode
+
+You can use something like `nodemon` to watch for updates and then regenerate your site:
+
+```sh
+nodemon --exec "ssr --out public --src path/to/site/**/*.js" --watch path/to/site
+```
+
 ## Running with other Node / DOM implementations
 
 There's other implementations out there such as [Domino](https://github.com/fgnass/domino) and [JSDOM](https://github.com/tmpvar/jsdom). They don't yet have support for custom elements or shadow DOM, but if they did, then you would use this library in the same way, just without requiring `@skatejs/ssr/register`. With some implementations that don't yet support web components, requiring `@skatejs/ssr/register` may work, but your mileage may vary. Currently only Undom is officially supported.
