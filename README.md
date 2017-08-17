@@ -142,7 +142,7 @@ There's some notes and limitations that you should be aware of.
 
 ### Scoped styles
 
-Scoped styles are emulated by scoping class names only. This means you are limited to using only class names within your shadow root `<style />` tags. This means that you can do:
+Scoped styles are emulated by scoping class names only. This means you are limited to using only class names within your shadow root `<style />` tags:
 
 ```html
 <style>
