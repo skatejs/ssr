@@ -7,6 +7,7 @@ const render = require("../index");
 
 const Hapi = require("hapi");
 const fs = require("fs");
+const path = require("path");
 
 const server = new Hapi.Server();
 server.connection({
@@ -18,11 +19,17 @@ server.route({
   method: "GET",
   path: "/{page*}",
   handler(request, response) {
-    const page = `./pages/${request.params.page || "index"}.js`;
+    const page = path.join(
+      __dirname,
+      "pages",
+      `${request.params.page || "index"}.js`
+    );
     const Page = fs.existsSync(page)
       ? require(page)
       : require("./pages/404.js");
-    return response(render(Object.assign(new Page(), request.params)));
+    return response(
+      render(Object.assign(new Page(), request.params), request.params)
+    );
   }
 });
 
