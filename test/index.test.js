@@ -126,8 +126,7 @@ describe("render (serialisation)", () => {
   describe("renders correctly", () => {
     class Hello extends HTMLElement {
       connectedCallback() {
-        const shadowRoot = this.attachShadow({ mode: "open" });
-        shadowRoot.appendChild(
+        this.attachShadow({ mode: "open" }).appendChild(
           <span>
             Hello,{" "}
             <x-yell>
@@ -140,12 +139,10 @@ describe("render (serialisation)", () => {
     class Yell extends HTMLElement {
       connectedCallback() {
         Promise.resolve().then(() => {
-          const shadowRoot = this.attachShadow({ mode: "open" });
-          shadowRoot.appendChild(
-            <strong>
-              <slot />
-            </strong>
-          );
+          this.attachShadow({ mode: "open" }).innerHTML = `
+            <style>.test1,.test2 { font-weight: bold; }</style>
+            <span class="test"><slot></slot></span>
+          `;
         });
       }
     }

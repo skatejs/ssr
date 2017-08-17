@@ -2,7 +2,7 @@ const _id = Symbol();
 const utils = require("./utils");
 
 function formatCss(css, shadowRootId) {
-  return css.replace(/(\.[^\s]+)/g, `$1${shadowRootId}`);
+  return css.replace(/(\.[^\s,]+)/g, `$1${shadowRootId}`);
 }
 
 let shadowRootIds = 0;
@@ -65,7 +65,7 @@ function stringify(node, opts, currentShadowRoot) {
 
   // We must intercept style nodes and cache their content so that we can
   // dedupe it. Later we add it to the response.
-  if (nodeName === "STYLE") {
+  if (currentShadowRoot && nodeName === "STYLE") {
     return opts.rehydrate
       ? `<script data-style-id="__style_${currentShadowRoot[
           _id
