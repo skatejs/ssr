@@ -39,6 +39,8 @@ function extractStyleData(node, cache = {}, currentShadowRoot) {
       if (currentShadowRoot) {
         currentShadowRoot[_id] = shadowRootIds++;
       }
+    } else if (currentShadowRoot) {
+      currentShadowRoot[_id] = id;
     }
   }
 

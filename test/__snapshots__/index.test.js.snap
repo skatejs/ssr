@@ -3,13 +3,19 @@
 exports[`render (serialisation) renders correctly document 1`] = `
 "<html><head><script>function __ssr_rehydrate(){var r=document.currentScript,e=r.parentNode,t=e.parentNode,n=function(r,e){for(;r&&r.firstChild;)e.appendChild(r.firstChild)};e.removeChild(r),t.removeChild(e);var o=t.attachShadow({mode:\\"open\\"});n(e,o);var a=o.querySelectorAll(\\"slot\\");(function(){for(var r,e=[],t=0,n=a.length;t<n;t++){var o=a[t];r&&r.contains(o)||(e.push(o),r=o)}return e})().forEach(function(r){n(r,t)})}function __ssr_restyle(){var t=document.currentScript,e=document.createElement(\\"style\\");e.textContent=document.getElementById(t.getAttribute(\\"data-style-id\\")).textContent,t.parentNode.replaceChild(e,t)}</script><style>.test10,.test20 { font-weight: bold; }</style></head><body><x-hello><shadow-root><span>Hello, <x-yell><shadow-root>
             <script data-style-id=\\"__style_0\\">__ssr_restyle()</script>
-            <span class=\\"test0\\"><slot><slot>World</slot></slot></span>
-          <script>__ssr_rehydrate()</script></shadow-root></x-yell>!</span><script>__ssr_rehydrate()</script></shadow-root></x-hello></body></html>"
+            <span class=\\"test10\\"><slot><slot>World</slot></slot></span>
+          <script>__ssr_rehydrate()</script></shadow-root></x-yell>!<x-yell><shadow-root>
+            <script data-style-id=\\"__style_0\\">__ssr_restyle()</script>
+            <span class=\\"test10\\"><slot>!</slot></span>
+          <script>__ssr_rehydrate()</script></shadow-root></x-yell></span><script>__ssr_rehydrate()</script></shadow-root></x-hello></body></html>"
 `;
 
 exports[`render (serialisation) renders correctly node 1`] = `
 "<script>function __ssr_rehydrate(){var r=document.currentScript,e=r.parentNode,t=e.parentNode,n=function(r,e){for(;r&&r.firstChild;)e.appendChild(r.firstChild)};e.removeChild(r),t.removeChild(e);var o=t.attachShadow({mode:\\"open\\"});n(e,o);var a=o.querySelectorAll(\\"slot\\");(function(){for(var r,e=[],t=0,n=a.length;t<n;t++){var o=a[t];r&&r.contains(o)||(e.push(o),r=o)}return e})().forEach(function(r){n(r,t)})}function __ssr_restyle(){var t=document.currentScript,e=document.createElement(\\"style\\");e.textContent=document.getElementById(t.getAttribute(\\"data-style-id\\")).textContent,t.parentNode.replaceChild(e,t)}</script><style id=\\"__style_0\\">.test10,.test20 { font-weight: bold; }</style><x-hello><shadow-root><span>Hello, <x-yell><shadow-root>
             <script data-style-id=\\"__style_0\\">__ssr_restyle()</script>
-            <span class=\\"test0\\"><slot><slot>World</slot></slot></span>
-          <script>__ssr_rehydrate()</script></shadow-root></x-yell>!</span><script>__ssr_rehydrate()</script></shadow-root></x-hello>"
+            <span class=\\"test10\\"><slot><slot>World</slot></slot></span>
+          <script>__ssr_rehydrate()</script></shadow-root></x-yell>!<x-yell><shadow-root>
+            <script data-style-id=\\"__style_0\\">__ssr_restyle()</script>
+            <span class=\\"test10\\"><slot>!</slot></span>
+          <script>__ssr_rehydrate()</script></shadow-root></x-yell></span><script>__ssr_rehydrate()</script></shadow-root></x-hello>"
 `;

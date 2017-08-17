@@ -132,6 +132,7 @@ describe("render (serialisation)", () => {
             <x-yell>
               <slot />
             </x-yell>!
+            <x-yell>!</x-yell>
           </span>
         );
       }
@@ -141,7 +142,7 @@ describe("render (serialisation)", () => {
         Promise.resolve().then(() => {
           this.attachShadow({ mode: "open" }).innerHTML = `
             <style>.test1,.test2 { font-weight: bold; }</style>
-            <span class="test"><slot></slot></span>
+            <span class="test1"><slot></slot></span>
           `;
         });
       }
