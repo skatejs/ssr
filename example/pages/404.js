@@ -3,7 +3,7 @@
 const { Component, define, h, props } = require("skatejs");
 
 module.exports = define(
-  class extends Component {
+  class NotFound extends Component {
     static props = {
       page: props.string
     };

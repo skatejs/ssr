@@ -1,42 +1,37 @@
 /** @jsx vh */
 
-const { Component, define, h } = require("skatejs");
+const { Component, define, h, withUnique } = require("skatejs");
 const vh = require("@skatejs/val").default(h);
 
-const Yell = define(
-  class extends HTMLElement {
-    static is = "x-yell";
-    connectedCallback() {
-      const slot = document.createElement("slot");
-      const strong = document.createElement("strong");
-
-      this.attachShadow({ mode: "open" });
-      this.shadowRoot.appendChild(strong);
-      strong.appendChild(slot);
-    }
+class Yell extends withUnique() {
+  connectedCallback() {
+    this.attachShadow({ mode: "open" }).innerHTML = `
+      <style>.test { font-weight: bold; }</style>
+      <span class="test"><slot></slot></span>
+    `;
   }
-);
+}
 
-const Hello = define(
-  class extends Component {
-    renderCallback() {
-      return (
-        <span>
-          Hello,{" "}
-          <Yell>
-            <slot />
-          </Yell>!
-        </span>
-      );
-    }
+class Hello extends Component {
+  renderCallback() {
+    return (
+      <span className="test">
+        Hello,{" "}
+        <Yell>
+          <slot />
+        </Yell>!
+      </span>
+    );
   }
-);
+}
+
+[Yell, Hello].forEach(define);
 
 module.exports = define(
-  class extends Component {
+  class Index extends Component {
     renderCallback() {
       return (
-        <div>
+        <div className="test">
           <h1>SkateJS</h1>
           <p>
             <Hello>World</Hello>
