@@ -16,9 +16,11 @@ const glob = require("glob");
 const fs = require("fs");
 const mkdirp = require("mkdirp");
 
+const debug = args.debug;
 const full = args.hasOwnProperty("full");
 const out = args.out || "static";
 const props = args.props;
+const rehydrate = args.rehydrate !== false;
 const src = args.src || "src/**/*.js";
 const suffix = args.suffix || "html";
 
@@ -41,7 +43,7 @@ glob(src, (err, files) => {
       Object.assign(page, JSON.parse(props));
     }
 
-    render(full ? document : page).then(rendered => {
+    render(full ? document : page, { debug, rehydrate }).then(rendered => {
       const basename = path.basename(file);
       const namePart = basename.split(".");
 

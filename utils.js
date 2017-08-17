@@ -1,11 +1,7 @@
 const { minify } = require("uglify-es");
 const cache = {};
 
-/**
- * Client side rehydration script.
- * This will get stringified, so it cannot rely on any external scope
- * @return {undefined}
- */
+// Rehydrates the host element with a shadow root.
 function rehydrate() {
   var script = document.currentScript;
   var fakeShadowRoot = script.parentNode;

@@ -65,6 +65,14 @@ On the client, just inline your server-rendered string:
 
 [See it in action!](http://jsbin.com/cilocowozu/2/edit?html,output)
 
+## API
+
+The only function this library exposes is `render()`. The first argument is the DOM tree you want to render. It can be a `document` node or any HTML node. The second argument are the options to customise rendering. These options are:
+
+- `debug` - Whether or not to pretty print the HTML result. Defaults to `false`.
+- `rehydrate` - Whether or not to add the inline rehydration scripts. Defaults to `true`.
+- `resolver` - The function to call that will resolve the promise. Defaults to `setTimeout`.
+
 ## Running in Node
 
 If you want to run your code in Node, just require the registered environment before doing anything DOMish.
@@ -103,8 +111,10 @@ ssr --out public --src path/to/site/**/*.js
 Options are:
 
 - `--babel` - Path to custom babel config. Uses `require()` to load relative to `process.cwd()`. Defaults to `.babelrc` / `package.json` field.
+- `--debug` - Whether or not to pretty print the HTML result. Defaults to `false`.
 - `--out` - The directory to place the statically rendered files.
 - `--props` - A JSON object of custom props to assign to the custom elements before they're rendered.
+- `--rehydrate` - Whether or not to add rehydration scripts. Defaults to `true`.
 - `--src` - A glob for the source files to statically render to `--out`.
 - `--suffix` - The suffix to put on the output files. Defaults to `html`;
 
@@ -120,12 +130,6 @@ nodemon --exec "ssr --out public --src path/to/site/**/*.js" --watch path/to/sit
 
 There's other implementations out there such as [Domino](https://github.com/fgnass/domino) and [JSDOM](https://github.com/tmpvar/jsdom). They don't yet have support for custom elements or shadow DOM, but if they did, then you would use this library in the same way, just without requiring `@skatejs/ssr/register`. With some implementations that don't yet support web components, requiring `@skatejs/ssr/register` may work, but your mileage may vary. Currently only Undom is officially supported.
 
-## Why
-
-- Lightweight rehydration of shadow content.
-- Web crawlers can index both light and shadow DOM.
-- Selectors work through shadow roots (possible Selenium integration), though they won't be the same on the server as on the client.
-
 ## The future
 
 The definition of success for this library is if it can be made mostly redundant. Things like a DOM implementation in Node (JSDOM / UnDOM, etc) are still necessary. The static-site generation will probably still be a thing. However, we hope that the serialisation and rehydration of Shadow DOM can be spec'd - in some way - and a standardised API for doing so makes it's way to the platform.
@@ -134,17 +138,23 @@ Serialisation may still be done in a Node DOM implementation, but it'd be great 
 
 ## Notes
 
-The priorities of this library are as follows:
+There's some notes and limitations that you should be aware of.
 
-1. Crawlable content without JavaScript enabled.
-2. Crawlable content if JavaScript is executed.
-3. Immediate rehydration to give the appearance of fast loading even if you have't loaded your custom element definitions yet.
+### Scoped styles
 
-**We are not targeting users that have JavaScript disabled. This *might* happen in the future. You can possibly get around this if you use CSS in JS, but we haven't tried it. YMMV.**
+Scoped styles are emulated by scoping class names only. This means you are limited to using only class names within your shadow root `<style />` tags. This means that you can do:
 
-### Styling
+```html
+<style>
+  .some-class {}
+</style>
+```
 
-While the page can be rendered without JavaScript, it won't be pretty because there is no style emulation being done on the server **if you choose to use native Shadow DOM styling**. If you want it to look the same with or without Shadow DOM, you can use most any CSS in JS lib.
+It will make that class name unique and scope it to the shadow roots that use it.
+
+Support for both `:host` and `:slotted` still need to be implemented.
+
+Style tags are also deduped. This means that if you use a `<style />` element that has the same content in several places, it will only be added to the head once. If you enable rehydration, it will pull from that script tag directly when attaching a shadow root.
 
 ### DOM API limitations
 
