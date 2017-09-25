@@ -102,6 +102,9 @@ function patchElement() {
   ElementProto.hasAttribute = function(name) {
     return this.getAttribute(name) !== null;
   };
+  ElementProto.hasAttributes = function() {
+    return !!this.attributes.length;
+  };
   ElementProto.removeAttribute = function(name) {
     const oldValue = this.getAttribute(name);
     removeAttribute.call(this, name);
@@ -219,6 +222,30 @@ function patchNode() {
   Node.ELEMENT_NODE = 1;
   Node.TEXT_NODE = 3;
 
+  prop(NodeProto, 'content', {
+    get() {
+      if (!this._content) {
+        this._content = new DocumentFragment();
+        this.childNodes.forEach(node => this._content.appendChild(node));
+      }
+      return this._content;
+    }
+  });
+
+  prop(NodeProto, 'nodeType', {
+    get() {
+      if (this instanceof Element) {
+        return 1;
+      }
+      if (this instanceof Text) {
+        return 3;
+      }
+      if (this instanceof DocumentFragment) {
+        return 11;
+      }
+    }
+  });
+
   prop(NodeProto, "textContent", {
     get() {
       return this.childNodes.map(c => c.nodeValue).join("");
@@ -261,8 +288,59 @@ function patchNode() {
   };
 }
 
+document.createTreeWalker = function(
+  root,
+  whatToShow = NodeFilter.SHOW_ALL,
+  filter = { acceptNode: () => NodeFilter.FILTER_ACCEPT }
+) {
+  let initial = true;
+  return {
+    currentNode: null,
+    nextNode() {
+      if (initial) {
+        initial = false;
+        this.currentNode = root;
+      } else if (this.currentNode.nextSibling) {
+        this.currentNode = this.currentNode.nextSibling;
+      } else if (this.currentNode.firstChild) {
+        this.currentNode = this.currentNode.firstChild;
+      } else {
+        this.currentNode = null;
+      }
+      return this.currentNode;
+    }
+  };
+};
+
+document.importNode = function(node, deep) {
+  const { parentNode } = node;
+  if (parentNode) {
+    parentNode.removeChild(node);
+  }
+  if (!deep) {
+    while (node.hasChildNodes()) {
+      node.removeChild(node.firstChild);
+    }
+  }
+  return node;
+};
+
 document.head = document.createElement("head");
 document.insertBefore(document.head, document.body);
+
+window.NodeFilter = {
+  FILTER_ACCEPT: 100,
+  FILTER_REJECT: 101,
+  FILTER_SKIP: 102,
+  SHOW_ALL: -1,
+  SHOW_COMMENT: 128,
+  SHOW_DOCUMENT: 256,
+  SHOW_DOCUMENT_FRAGMENT: 1024,
+  SHOW_DOCUMENT_TYPE: 512,
+  SHOW_ELEMENT: 1,
+  SHOW_PROCESSING_INSTRUCTION: 64,
+  SHOW_TEXT: 4
+};
 
 patchCustomElements();
 patchDocumentFragment();
