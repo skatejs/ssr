@@ -353,7 +353,75 @@ document.importNode = function(node, deep) {
 document.head = document.createElement('head');
 document.insertBefore(document.head, document.body);
 
+class History {
+  constructor() {
+    this._history = [];
+    this._index = 0;
+    this.pushState({}, null, 'about:blank');
+  }
+  get length() {
+    return this._history.length;
+  }
+  get state() {
+    return this._history[this._index];
+  }
+  back() {
+    if (index > 0) {
+      this.index--;
+      this._dispatch();
+    }
+  }
+  forward() {
+    if (index < this.length - 1) {
+      this.index++;
+      this._dispatch();
+    }
+  }
+  go(rel) {
+    const abs = Math.abs(rel);
+    const method = rel > 0;
+    if (rel > 0) {
+      for (const a = 0; a < abs; a++) {
+        this.forward();
+      }
+    } else if (rel < 0) {
+      for (const a = 0; a < abs; a++) {
+        this.back();
+      }
+    }
+  }
+  pushState(state, title, url) {
+    this._history.push({
+      state,
+      title,
+      url
+    });
+    this._dispatch();
+  }
+  replaceState(state, title, url) {
+    Object.assign(this.state, {
+      state,
+      title,
+      url
+    });
+    this._dispatch();
+  }
+  _dispatch() {
+    window.dispatchEvent(
+      new Event('popstate', {
+        state: this.state
+      })
+    );
+  }
+}
+
+expose('__handlers', {});
+expose('addEventListener', ElementProto.addEventListener.bind(window));
+expose('removeEventListener', ElementProto.removeEventListener.bind(window));
+expose('dispatchEvent', ElementProto.dispatchEvent.bind(window));
+expose('history', new History());
 expose('location', {
+  hash: '',
   href: 'about:blank',
   protocol: 'node'
 });
