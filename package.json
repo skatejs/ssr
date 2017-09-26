@@ -39,6 +39,7 @@
     ]
   },
   "jest": {
+    "setupFiles": ["./test/_"],
     "testEnvironment": "./jest"
   }
 }

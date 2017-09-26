@@ -1,12 +1,12 @@
-require("undom/register");
-const { parseFragment } = require("parse5");
+require('undom/register');
+const { parseFragment } = require('parse5');
 
 const ElementProto = Element.prototype;
 const NodeProto = Node.prototype;
 const { insertBefore, removeChild } = NodeProto;
 const { dispatchEvent } = ElementProto;
 const { defineProperty: prop } = Object;
-const isConnected = Symbol("isConnected");
+const isConnected = Symbol('isConnected');
 
 function expose(name, value) {
   global[name] = window[name] = value;
@@ -40,9 +40,9 @@ function translateParsed(parsed) {
   let node;
   const { attrs, childNodes, nodeName, value } = parsed;
 
-  if (nodeName === "#document-fragment") {
+  if (nodeName === '#document-fragment') {
     node = document.createDocumentFragment();
-  } else if (nodeName === "#text") {
+  } else if (nodeName === '#text') {
     node = document.createTextNode(value);
   } else {
     node = document.createElement(nodeName);
@@ -56,11 +56,31 @@ function translateParsed(parsed) {
   return node;
 }
 
+function patchComment() {
+  expose(
+    'Comment',
+    class extends Node {
+      get outerHTML() {
+        return `<!--${this.textContent}-->`;
+      }
+      get innerHTML() {
+        return this.textContent;
+      }
+    }
+  );
+
+  document.createComment = function(textContent) {
+    const comment = new Comment();
+    comment.textContent = textContent;
+    return comment;
+  };
+}
+
 function patchCustomElements() {
   const customElementRegistry = {};
-  expose("customElements", {
+  expose('customElements', {
     define(name, func) {
-      prop(func.prototype, "nodeName", { value: name.toUpperCase() });
+      prop(func.prototype, 'nodeName', { value: name.toUpperCase() });
       customElementRegistry[name] = func;
     },
     get(name) {
@@ -72,17 +92,17 @@ function patchCustomElements() {
   document.createElement = function(name) {
     const Ctor = window.customElements.get(name);
     const elem = Ctor ? new Ctor() : createElement(name);
-    prop(elem, "localName", { value: name });
+    prop(elem, 'localName', { value: name });
     return elem;
   };
 }
 
 function patchDocumentFragment() {
   expose(
-    "DocumentFragment",
+    'DocumentFragment',
     class extends Node {
       get nodeName() {
-        return "#document-fragment";
+        return '#document-fragment';
       }
     }
   );
@@ -120,13 +140,13 @@ function patchElement() {
     }
   };
   ElementProto.assignedNodes = function() {
-    if (this.nodeName !== "SLOT") {
+    if (this.nodeName !== 'SLOT') {
       throw new Error(
-        "Non-standard: assignedNodes() called on non-slot element."
+        'Non-standard: assignedNodes() called on non-slot element.'
       );
     }
 
-    const name = this.getAttribute("name") || this.name;
+    const name = this.getAttribute('name') || this.name;
 
     let node = this,
       host;
@@ -140,14 +160,14 @@ function patchElement() {
     return host
       ? host.childNodes.filter(n => {
           return name
-            ? n.getAttribute && n.getAttribute("slot") === name
-            : !n.getAttribute || !n.getAttribute("slot");
+            ? n.getAttribute && n.getAttribute('slot') === name
+            : !n.getAttribute || !n.getAttribute('slot');
         })
       : [];
   };
-  prop(ElementProto, "innerHTML", {
+  prop(ElementProto, 'innerHTML', {
     get() {
-      return this.childNodes.map(c => c.outerHTML || c.textContent).join("");
+      return this.childNodes.map(c => c.outerHTML || c.textContent).join('');
     },
     set(val) {
       while (this.hasChildNodes()) {
@@ -156,42 +176,41 @@ function patchElement() {
       this.appendChild(translateParsed(parseFragment(val)));
     }
   });
-  prop(ElementProto, "outerHTML", {
+  prop(ElementProto, 'outerHTML', {
     get() {
       const { attributes, nodeName } = this;
       const name = nodeName.toLowerCase();
       return `<${name}${attributes.reduce(
         (prev, { name, value }) => prev + ` ${name}="${value}"`,
-        ""
+        ''
       )}>${this.innerHTML}</${name}>`;
     },
     set(val) {
-      throw new Error("Not implemented: set outerHTML");
+      throw new Error('Not implemented: set outerHTML');
     }
   });
 }
 
 function patchEvents() {
-  expose(
-    "CustomEvent",
-    expose(
-      "Event",
-      class extends Event {
-        constructor(evnt, opts = {}) {
-          super(evnt, opts);
-        }
-        initEvent(type, bubbles, cancelable) {
-          this.bubbles = bubbles;
-          this.cancelable = cancelable;
-          this.type = type;
-        }
-        initCustomEvent(type, bubbles, cancelable, detail) {
-          this.initEvent(type, bubbles, cancelable);
-          this.detail = detail;
-        }
+  const PatchedEvent = expose(
+    'Event',
+    class extends Event {
+      constructor(evnt, opts = {}) {
+        super(evnt, opts);
       }
-    )
+      initEvent(type, bubbles, cancelable) {
+        this.bubbles = bubbles;
+        this.cancelable = cancelable;
+        this.type = type;
+      }
+      initCustomEvent(type, bubbles, cancelable, detail) {
+        this.initEvent(type, bubbles, cancelable);
+        this.detail = detail;
+      }
+    }
   );
+  expose('CustomEvent', PatchedEvent);
+  expose('MouseEvent', PatchedEvent);
 
   document.createEvent = function(name) {
     return new window[name]();
@@ -207,14 +226,14 @@ function patchHTMLElement() {
     constructor: { value: HTMLElement, configurable: true, writable: true }
   });
   HTMLElement.prototype.attachShadow = function({ mode }) {
-    const shadowRoot = document.createElement("shadow-root");
-    prop(this, "shadowRoot", { value: shadowRoot });
-    prop(shadowRoot, "host", { value: this });
-    prop(shadowRoot, "mode", { value: mode });
-    prop(shadowRoot, "parentNode", { value: this });
+    const shadowRoot = document.createElement('shadow-root');
+    prop(this, 'shadowRoot', { value: shadowRoot });
+    prop(shadowRoot, 'host', { value: this });
+    prop(shadowRoot, 'mode', { value: mode });
+    prop(shadowRoot, 'parentNode', { value: this });
     return shadowRoot;
   };
-  expose("HTMLElement", HTMLElement);
+  expose('HTMLElement', HTMLElement);
 }
 
 function patchNode() {
@@ -232,6 +251,12 @@ function patchNode() {
     }
   });
 
+  prop(NodeProto, 'ownerDocument', {
+    get() {
+      return document;
+    }
+  });
+
   prop(NodeProto, 'nodeType', {
     get() {
       if (this instanceof Element) {
@@ -246,9 +271,9 @@ function patchNode() {
     }
   });
 
-  prop(NodeProto, "textContent", {
+  prop(NodeProto, 'textContent', {
     get() {
-      return this.childNodes.map(c => c.nodeValue).join("");
+      return this.childNodes.map(c => c.nodeValue).join('');
     },
     set(val) {
       this.appendChild(document.createTextNode(val));
@@ -325,10 +350,17 @@ document.importNode = function(node, deep) {
   return node;
 };
 
-document.head = document.createElement("head");
+document.head = document.createElement('head');
 document.insertBefore(document.head, document.body);
 
-window.NodeFilter = {
+expose('location', {
+  href: 'about:blank',
+  protocol: 'node'
+});
+expose('navigator', {
+  userAgent: 'Node'
+});
+expose('NodeFilter', {
   FILTER_ACCEPT: 100,
   FILTER_REJECT: 101,
   FILTER_SKIP: 102,
@@ -340,8 +372,9 @@ window.NodeFilter = {
   SHOW_ELEMENT: 1,
   SHOW_PROCESSING_INSTRUCTION: 64,
   SHOW_TEXT: 4
-};
+});
 
+patchComment();
 patchCustomElements();
 patchDocumentFragment();
 patchElement();
