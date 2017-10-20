@@ -1,5 +1,6 @@
 require('undom/register');
 const { parseFragment } = require('parse5');
+const { MutationObserver, MutationRecord } = require('./MutationObserver');
 
 const ElementProto = Element.prototype;
 const NodeProto = Node.prototype;
@@ -13,11 +14,32 @@ function expose(name, value) {
   return value;
 }
 
+function triggerMutation(
+  mutationType,
+  childNode,
+  attributeName = null,
+  oldValue = null
+) {
+  const { parentNode, previousSibling, nextSibling } = childNode;
+  window.dispatchEvent(
+    new Event('__MutationObserver', {
+      mutationType,
+      childNode,
+      parentNode,
+      previousSibling,
+      nextSibling,
+      attributeName,
+      oldValue
+    })
+  );
+}
+
 function connectNode(node) {
   if (node.connectedCallback && !node[isConnected]) {
     node.connectedCallback();
   }
   node[isConnected] = true;
+  triggerMutation('add', node);
 }
 
 function disconnectNode(node) {
@@ -25,6 +47,7 @@ function disconnectNode(node) {
     node.disconnectedCallback();
   }
   node[isConnected] = false;
+  triggerMutation('remove', node);
 }
 
 function each(node, call) {
@@ -128,6 +151,7 @@ function patchElement() {
   ElementProto.removeAttribute = function(name) {
     const oldValue = this.getAttribute(name);
     removeAttribute.call(this, name);
+    triggerMutation('attribute', this, name, oldValue);
     if (this.attributeChangedCallback) {
       this.attributeChangedCallback(name, oldValue, null);
     }
@@ -135,6 +159,7 @@ function patchElement() {
   ElementProto.setAttribute = function(name, newValue) {
     const oldValue = this.getAttribute(name);
     setAttribute.call(this, name, newValue);
+    triggerMutation('attribute', this, name, oldValue);
     if (this.attributeChangedCallback) {
       this.attributeChangedCallback(name, oldValue, newValue);
     }
@@ -197,6 +222,7 @@ function patchEvents() {
     class extends Event {
       constructor(evnt, opts = {}) {
         super(evnt, opts);
+        Object.assign(this, opts);
       }
       initEvent(type, bubbles, cancelable) {
         this.bubbles = bubbles;
@@ -307,8 +333,8 @@ function patchNode() {
   // Undom internally calls removeChild in replaceChild.
   NodeProto.removeChild = function(refNode) {
     return each(refNode, refNode => {
+      disconnectNode(refNode, this);
       removeChild.call(this, refNode);
-      disconnectNode(refNode);
     });
   };
 }
@@ -449,3 +475,6 @@ patchElement();
 patchEvents();
 patchHTMLElement();
 patchNode();
+
+expose('MutationObserver', MutationObserver);
+expose('MutationRecord', MutationRecord);

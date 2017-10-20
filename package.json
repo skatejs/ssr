@@ -5,9 +5,9 @@
   "files": [
     "bin",
     "perf",
+    "register",
     "index.js",
     "jest.js",
-    "register.js",
     "utils.js"
   ],
   "scripts": {
