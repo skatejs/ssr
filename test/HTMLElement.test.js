@@ -1,4 +1,4 @@
-describe("Element", () => {
+describe('Element', () => {
   it('setAttribute', () => {
     const div = document.createElement('div');
     div.setAttribute('test', 'value');
@@ -35,7 +35,6 @@ describe("Element", () => {
 
   it('hasAttributes', () => {
     const div = document.createElement('div');
-    console.log(div.hasAttributes());
     expect(div.hasAttributes()).toBe(false);
     div.setAttribute('test', 'value');
     expect(div.hasAttributes()).toBe(true);
@@ -45,23 +44,23 @@ describe("Element", () => {
     expect(div.hasAttributes()).toBe(false);
   });
 
-  describe("attachShadow", () => {
-    it("should be patched on Element", () => {
-      expect(HTMLElement.prototype.hasOwnProperty("attachShadow")).toEqual(
+  describe('attachShadow', () => {
+    it('should be patched on Element', () => {
+      expect(HTMLElement.prototype.hasOwnProperty('attachShadow')).toEqual(
         true
       );
     });
 
-    it("mode: open, should create a shadowRoot property", () => {});
+    it('mode: open, should create a shadowRoot property', () => {});
 
-    it("mode: closed, should not create a shadowRoot property", () => {});
+    it('mode: closed, should not create a shadowRoot property', () => {});
   });
 
-  describe("innerHTML", () => {
-    it("should get innerHTML", () => {});
+  describe('innerHTML', () => {
+    it('should get innerHTML', () => {});
 
-    it("should set innerHTML", () => {
-      const div = document.createElement("div");
+    it('should set innerHTML', () => {
+      const div = document.createElement('div');
       const html = `<h1 id="yelling">Test</h1><section><p><span id="nested-span">Paragraph</span> 1.</p><p><span>Paragraph</span> 2.</p></section>`;
       div.innerHTML = html;
       expect(div.innerHTML).toEqual(html);

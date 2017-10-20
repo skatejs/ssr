@@ -12,7 +12,7 @@ function observe(func, opts) {
 test('childList', done => {
   const { el } = observe(
     muts => {
-      expect(muts).toBe(1);
+      expect(Array.isArray(muts)).toBe(true);
       done();
     },
     {

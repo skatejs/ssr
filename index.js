@@ -1,5 +1,5 @@
 const _id = Symbol();
-const utils = require("./utils");
+const utils = require('./utils');
 
 function formatCss(css, shadowRootId) {
   return css.replace(/(\.[^\s,]+)/g, `$1${shadowRootId}`);
@@ -12,12 +12,12 @@ function extractStyleData(node, cache = {}, currentShadowRoot) {
 
   // We must intercept style nodes and cache their content so that we can
   // dedupe it. Later we add it to the response
-  if (nodeName === "STYLE") {
+  if (nodeName === 'STYLE') {
     let css = stringifyAll(childNodes);
     let id = cache[css];
 
     if (id === undefined) {
-      id = cache[css] = data.length;
+      cache[css] = shadowRootIds;
 
       // We format the CSS here because we want to dedupe the CSS across
       // multiple shadow roots. If we format it above, it will be different
@@ -37,8 +37,10 @@ function extractStyleData(node, cache = {}, currentShadowRoot) {
       //
       // TODO try and remove this side-effect.
       if (currentShadowRoot) {
-        currentShadowRoot[_id] = shadowRootIds++;
+        currentShadowRoot[_id] = shadowRootIds;
       }
+
+      shadowRootIds++;
     } else if (currentShadowRoot) {
       currentShadowRoot[_id] = id;
     }
@@ -61,23 +63,23 @@ function stringify(node, opts, currentShadowRoot) {
   const { attributes = [], childNodes, nodeName, nodeValue, shadowRoot } = node;
 
   // Text nodes don't need any decoration.
-  if (nodeName === "#text") {
+  if (nodeName === '#text') {
     return nodeValue;
   }
 
   // We must intercept style nodes and cache their content so that we can
   // dedupe it. Later we add it to the response.
-  if (currentShadowRoot && nodeName === "STYLE") {
+  if (currentShadowRoot && nodeName === 'STYLE') {
     return opts.rehydrate
       ? `<script data-style-id="__style_${currentShadowRoot[
           _id
         ]}">${opts.funcName}_restyle()</script>`
-      : "";
+      : '';
   }
 
-  const localName = nodeName === "#document" ? "html" : nodeName.toLowerCase();
+  const localName = nodeName === '#document' ? 'html' : nodeName.toLowerCase();
 
-  if (localName === "slot") {
+  if (localName === 'slot') {
     let currentNode = node,
       host;
     while ((currentNode = currentNode.parentNode)) {
@@ -101,7 +103,7 @@ function stringify(node, opts, currentShadowRoot) {
     });
 
     if (!hasAssignedNodes) {
-      attributes.push({ name: "default", value: "" });
+      attributes.push({ name: 'default', value: '' });
     }
 
     return `<slot${stringifyAttributes(attributes)}>${stringifyAll(
@@ -112,30 +114,33 @@ function stringify(node, opts, currentShadowRoot) {
   }
 
   if (currentShadowRoot && currentShadowRoot[_id] !== undefined) {
-    const className = node.getAttribute("class");
+    const className = node.getAttribute('class');
     if (className) {
       node.setAttribute(
-        "class",
-        className.split(" ").map(c => c + currentShadowRoot[_id]).join(" ")
+        'class',
+        className
+          .split(' ')
+          .map(c => c + currentShadowRoot[_id])
+          .join(' ')
       );
     }
   }
 
   const shadowNodes = shadowRoot
     ? stringify(shadowRoot, Object.assign({}, opts, { host: node }), shadowRoot)
-    : "";
+    : '';
   const lightNodes = stringifyAll(childNodes, opts, currentShadowRoot);
   const rehydrationScript =
-    opts.rehydrate && nodeName === "SHADOW-ROOT"
+    opts.rehydrate && nodeName === 'SHADOW-ROOT'
       ? `<script>${opts.funcName}_rehydrate()</script>`
-      : "";
+      : '';
   return `<${localName}${stringifyAttributes(
     attributes
   )}>${shadowNodes}${lightNodes}${rehydrationScript}</${localName}>`;
 }
 
 function stringifyAll(nodes, opts, currentShadowRoot) {
-  return nodes.map(node => stringify(node, opts, currentShadowRoot)).join("");
+  return nodes.map(node => stringify(node, opts, currentShadowRoot)).join('');
 }
 
 function stringifyAttributes(attributes) {
@@ -164,8 +169,8 @@ function render(node, opts) {
   // Merge defaults with custom options.
   opts = Object.assign(
     {
-      debug: process.env.NODE_ENV === "development",
-      funcName: "__ssr",
+      debug: process.env.NODE_ENV === 'development',
+      funcName: '__ssr',
       rehydrate: true,
       resolver: setTimeout
     },
@@ -184,17 +189,17 @@ function render(node, opts) {
   return new Promise(resolve => {
     opts.resolver(() => {
       const styleData = extractStyleData(node);
-      let prefix = "";
+      let prefix = '';
 
       // Only if we're rehydrating do we need to add scripts.
       if (opts.rehydrate) {
         const textContent =
-          utils("rehydrate", opts.funcName) + utils("restyle", opts.funcName);
+          utils('rehydrate', opts.funcName) + utils('restyle', opts.funcName);
 
         // In document mode, we must mutate the head and clean up after it when
         // we're done.
         if (isDocument) {
-          const ssrScriptElement = createElement("script", { textContent });
+          const ssrScriptElement = createElement('script', { textContent });
           nodesToRemove.push(ssrScriptElement);
           document.head.appendChild(ssrScriptElement);
         } else {
@@ -206,7 +211,7 @@ function render(node, opts) {
       // clean up after it.
       if (isDocument) {
         styleData.forEach(props => {
-          const style = createElement("style", props);
+          const style = createElement('style', props);
           nodesToRemove.push(style);
           document.head.appendChild(style);
         });
@@ -215,7 +220,7 @@ function render(node, opts) {
           .map(
             ({ id, textContent }) => `<style id="${id}">${textContent}</style>`
           )
-          .join("");
+          .join('');
       }
 
       // Stringify first so we can format if in debug mode.
