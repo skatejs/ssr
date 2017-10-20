@@ -14,11 +14,27 @@ class MutationRecord {
   }
 }
 
+function promise(done) {
+  let cancelled = false;
+  Promise.resolve().then(() => {
+    if (!cancelled) {
+      done();
+    }
+  });
+  return {
+    cancel() {
+      cancelled = true;
+    }
+  };
+}
+
 class MutationObserver {
   constructor(callback) {
     this._callback = callback;
+    this._cancel = () => {};
     this._element = null;
     this._enqueue = this._enqueue.bind(this);
+    this._promise = promise();
     this._records = new Map();
   }
   disconnect() {
@@ -57,8 +73,8 @@ class MutationObserver {
     //   throw new Error('The MutationObserver characterData is not implemented.');
     // }
 
-    clearTimeout(this._timeout);
-    this._timeout = setTimeout(() => this._callback(this.takeRecords()));
+    this._promise.cancel();
+    this._promise = promise(() => this._callback(this.takeRecords()));
 
     if (e.mutationType === 'add') {
       record.type = 'childList';

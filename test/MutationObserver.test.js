@@ -21,3 +21,24 @@ test('childList', done => {
   );
   el.appendChild(<div />);
 });
+
+test('childList - textContent (batched)', done => {
+  let called = 0;
+  const { el } = observe(() => ++called, { childList: true });
+  el.textContent = 'test1';
+  el.textContent = 'test2';
+  setTimeout(() => {
+    expect(called).toBe(1);
+    done();
+  });
+});
+
+test('timing', () => {
+  let called = 0;
+  const { el } = observe(() => ++called, { childList: true });
+  el.textContent = 'test1';
+  el.textContent = 'test2';
+  return Promise.resolve().then(() => {
+    expect(called).toBe(1);
+  });
+});
