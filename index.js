@@ -146,7 +146,7 @@ function stringifyAll(nodes, opts, currentShadowRoot) {
 function stringifyAttributes(attributes) {
   return Array.from(attributes || []).map(
     ({ name, value }) => ` ${name}="${value}"`
-  );
+  ).join('');
 }
 
 function createElement(name, props) {
