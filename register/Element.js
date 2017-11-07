@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { parseFragment } = require('parse5');
 
+const { ClassList } = require('./ClassList');
 const { triggerMutation } = require('./MutationObserver');
 
 const ElementProto = Element.prototype;
@@ -11,6 +12,12 @@ const {
   removeAttribute,
   setAttribute
 } = ElementProto;
+
+let settingProp = false;
+const attrToPropMap = {
+  id: 'id',
+  class: 'className'
+};
 
 function translateParsed(parsed) {
   let node;
@@ -60,8 +67,15 @@ ElementProto.removeAttribute = function(name) {
 };
 
 ElementProto.setAttribute = function(name, newValue) {
+  if (settingProp) return;
   const oldValue = this.getAttribute(name);
+  const propName = attrToPropMap[name];
   setAttribute.call(this, name, newValue);
+  if (propName) {
+    settingProp = true;
+    this[propName] = newValue;
+    settingProp = false;
+  }
   triggerMutation('attribute', this, name, oldValue);
   if (this.attributeChangedCallback) {
     this.attributeChangedCallback(name, oldValue, newValue);
@@ -105,6 +119,12 @@ ElementProto.attachShadow = function({ mode }) {
   Object.defineProperty(shadowRoot, 'parentNode', { value: this });
   return shadowRoot;
 };
+
+Object.defineProperty(ElementProto, 'classList', {
+  get() {
+    return new ClassList(this);
+  }
+});
 
 Object.defineProperty(ElementProto, 'innerHTML', {
   get() {

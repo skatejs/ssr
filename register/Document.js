@@ -2,6 +2,7 @@ const { Comment } = require('./Comment');
 const { customElements } = require('./CustomElements');
 const { DocumentFragment } = require('./DocumentFragment');
 const { NodeFilter } = require('./NodeFilter');
+const { find } = require('./util');
 
 const createElement = document.createElement.bind(document);
 
@@ -26,26 +27,39 @@ document.createEvent = function(name) {
 
 document.createTreeWalker = function(
   root,
+  // TODO needs implemeting.
   whatToShow = NodeFilter.SHOW_ALL,
+  // TODO needs implemeting.
   filter = { acceptNode: () => NodeFilter.FILTER_ACCEPT }
 ) {
-  let initial = true;
+  // Use an array so we don't have to use recursion.
+  const stack = [root];
   return {
     currentNode: null,
     nextNode() {
-      if (initial) {
-        initial = false;
-        this.currentNode = root;
-      } else if (this.currentNode.nextSibling) {
-        this.currentNode = this.currentNode.nextSibling;
-      } else if (this.currentNode.firstChild) {
-        this.currentNode = this.currentNode.firstChild;
-      } else {
-        this.currentNode = null;
+      this.currentNode = stack.shift();
+      if (this.currentNode) {
+        // We do this in *document order*, so descendents of earlier parents
+        // need to get visited first.
+        stack.unshift(...this.currentNode.childNodes);
       }
-      return this.currentNode;
+      return this.currentNode || null;
     }
   };
+};
+
+// TODO use a hash to speed this up.
+document.getElementById = function(id) {
+  return find(document, node => node.id === id, { one: true });
+};
+
+document.getElementsByClassName = function(className) {
+  return find(document, node => node.classList.contains(className));
+};
+
+document.getElementsByTagName = function(tagName) {
+  tagName = tagName.toUpperCase();
+  return find(document, node => node.nodeName === tagName);
 };
 
 document.importNode = function(node, deep) {
@@ -62,7 +76,10 @@ document.importNode = function(node, deep) {
 };
 
 document.head = document.createElement('head');
-document.insertBefore(document.head, document.body);
+document.documentElement = document.createElement('html');
+document.appendChild(document.documentElement);
+document.documentElement.appendChild(document.head);
+document.documentElement.appendChild(document.body);
 
 // Custom configuration options.
 document.ssr = {

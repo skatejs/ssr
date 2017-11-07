@@ -60,6 +60,9 @@ function extractStyleData(node, cache = {}, currentShadowRoot) {
 }
 
 function stringify(node, opts, currentShadowRoot) {
+  if (node === document) {
+    node = document.documentElement;
+  }
   const { attributes = [], childNodes, nodeName, nodeValue, shadowRoot } = node;
 
   // Text nodes don't need any decoration.
@@ -77,7 +80,7 @@ function stringify(node, opts, currentShadowRoot) {
       : '';
   }
 
-  const localName = nodeName === '#document' ? 'html' : nodeName.toLowerCase();
+  const localName = nodeName.toLowerCase();
 
   if (localName === 'slot') {
     let currentNode = node,
@@ -144,9 +147,9 @@ function stringifyAll(nodes, opts, currentShadowRoot) {
 }
 
 function stringifyAttributes(attributes) {
-  return Array.from(attributes || []).map(
-    ({ name, value }) => ` ${name}="${value}"`
-  ).join('');
+  return Array.from(attributes || [])
+    .map(({ name, value }) => ` ${name}="${value}"`)
+    .join('');
 }
 
 function createElement(name, props) {
