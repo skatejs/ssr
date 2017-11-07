@@ -1,5 +1,27 @@
 // @flow
 
+const { Event } = require('./Event');
+
+function triggerMutation(
+  mutationType,
+  childNode,
+  attributeName = null,
+  oldValue = null
+) {
+  const { parentNode, previousSibling, nextSibling } = childNode;
+  dispatchEvent(
+    new Event('__MutationObserver', {
+      mutationType,
+      childNode,
+      parentNode,
+      previousSibling,
+      nextSibling,
+      attributeName,
+      oldValue
+    })
+  );
+}
+
 class MutationRecord {
   constructor() {
     this.addedNodes = [];
@@ -38,12 +60,12 @@ class MutationObserver {
     this._records = new Map();
   }
   disconnect() {
-    window.removeEventListener('__MutationObserver', this._enqueue);
+    removeEventListener('__MutationObserver', this._enqueue);
   }
   observe(element, options) {
     this._element = element;
     this._options = options;
-    window.addEventListener('__MutationObserver', this._enqueue);
+    addEventListener('__MutationObserver', this._enqueue);
   }
   takeRecords() {
     const entries = this._records.entries();
@@ -96,7 +118,8 @@ class MutationObserver {
   }
 }
 
-Object.assign(module.exports, {
+module.exports = {
   MutationObserver,
-  MutationRecord
-});
+  MutationRecord,
+  triggerMutation
+};
