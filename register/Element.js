@@ -15,8 +15,9 @@ const {
 
 let settingProp = false;
 const attrToPropMap = {
+  class: 'className',
   id: 'id',
-  class: 'className'
+  src: 'src'
 };
 
 function translateParsed(parsed) {
