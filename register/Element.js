@@ -1,8 +1,11 @@
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 const { parseFragment } = require('parse5');
 
+const { execFile, nodeName, prop } = require('./util');
 const { ClassList } = require('./ClassList');
+const { CSSStyleSheet } = require('./StyleSheet');
 const { triggerMutation } = require('./MutationObserver');
 
 const ElementProto = Element.prototype;
@@ -17,7 +20,8 @@ let settingProp = false;
 const attrToPropMap = {
   class: 'className',
   id: 'id',
-  src: 'src'
+  src: 'src',
+  type: 'type'
 };
 
 function translateParsed(parsed) {
@@ -112,28 +116,57 @@ ElementProto.assignedNodes = function() {
 
 // This really should go on HTMLElement, however, all nodes created by Undom
 // derive from Element.
-ElementProto.attachShadow = function({ mode }) {
-  const shadowRoot = document.createElement('shadow-root');
-  Object.defineProperty(this, 'shadowRoot', { value: shadowRoot });
-  Object.defineProperty(shadowRoot, 'host', { value: this });
-  Object.defineProperty(shadowRoot, 'mode', { value: mode });
-  Object.defineProperty(shadowRoot, 'parentNode', { value: this });
+ElementProto.attachShadow = function({ mode, test }) {
+  // We use an element to denote this. This is proposed to be the element that
+  // will be used as the declarative form for Shadow DOM. This is subject to
+  // change.
+  const host = this;
+  const shadowRoot = document.createElement('shadowroot');
+
+  prop(shadowRoot, 'host', {
+    get() {
+      return host;
+    }
+  });
+  prop(shadowRoot, 'mode', {
+    get() {
+      return mode;
+    }
+  });
+
+  if (mode === 'open') {
+    prop(this, 'shadowRoot', {
+      get() {
+        return shadowRoot;
+      }
+    });
+  }
+
   return shadowRoot;
 };
 
-Object.defineProperty(ElementProto, 'classList', {
+prop(ElementProto, 'classList', {
   get() {
     return new ClassList(this);
   }
 });
 
-Object.defineProperty(ElementProto, 'innerHTML', {
+prop(ElementProto, 'className', {
+  get() {
+    return this.getAttribute('class');
+  },
+  set(val) {
+    this.setAttribute('class', val);
+  }
+});
+
+prop(ElementProto, 'innerHTML', {
   get() {
     return this.childNodes.map(c => c.outerHTML || c.textContent).join('');
   },
   set(val) {
     if (this.nodeName === 'SCRIPT') {
-      return (this.textConten = val);
+      return (this.textContent = val);
     }
     while (this.hasChildNodes()) {
       this.removeChild(this.firstChild);
@@ -142,31 +175,104 @@ Object.defineProperty(ElementProto, 'innerHTML', {
   }
 });
 
-Object.defineProperty(ElementProto, 'outerHTML', {
+prop(ElementProto, 'localName', {
   get() {
-    const { attributes, nodeName } = this;
-    const name = nodeName.toLowerCase();
-    return `<${name}${attributes.reduce(
+    return (this.nodeName || '').toLowerCase();
+  }
+});
+
+prop(ElementProto, 'nextElementSibling', {
+  get() {
+    let sib = this;
+    while ((sib = sib.nextSibling)) {
+      if (sib.nodeType === 1) {
+        return sib;
+      }
+    }
+  }
+});
+
+prop(ElementProto, 'nodeName', {
+  get() {
+    return this._nodeName || customElements.__fixLostNodeNameForElement(this);
+  },
+  set(val) {
+    this._nodeName = val;
+  }
+});
+
+prop(ElementProto, 'onload', {
+  get() {
+    return this._onload;
+  },
+  set(val) {
+    this._onload = val;
+    if (!this._loaded && this._onload && this._src) {
+      this._loaded = true;
+      this._onload();
+    }
+  }
+});
+
+prop(ElementProto, 'outerHTML', {
+  get() {
+    const { localName } = this;
+    return `<${localName}${this.attributes.reduce(
       (prev, { name, value }) => prev + ` ${name}="${value}"`,
       ''
-    )}>${this.innerHTML}</${name}>`;
+    )}>${this.innerHTML}</${localName}>`;
   },
   set(val) {
     throw new Error('Not implemented: set outerHTML');
   }
 });
 
-Object.defineProperty(ElementProto, 'src', {
+prop(ElementProto, 'previousElementSibling', {
+  get() {
+    let sib = this;
+    while ((sib = sib.previousSibling)) {
+      if (sib.nodeType === 1) {
+        return sib;
+      }
+    }
+  }
+});
+
+prop(ElementProto, 'sheet', {
+  get() {
+    if (this.nodeName === 'STYLE') {
+      return this._sheet || (this._sheet = new CSSStyleSheet(this));
+    }
+  }
+});
+
+prop(ElementProto, 'src', {
   get() {
     return this._src;
   },
   set(val) {
+    this.setAttribute('src', val);
+
+    this._loaded = false;
     this._src = val;
-    const filePath = path.resolve(path.join(document.ssr.scriptBase, val));
-    fs.readFile(filePath, (err, str) => {
-      eval(str.toString('utf-8'));
-      this.onload && this.onload();
-    });
+
+    if (
+      this.nodeName === 'SCRIPT' &&
+      (!this.type || this.type === 'text/javascript')
+    ) {
+      execFile(val);
+    }
+
+    if (!this._loaded && this._onload) {
+      this._loaded = true;
+      this._onload();
+    }
+  }
+});
+
+prop(ElementProto, 'tagName', {
+  get() {
+    return this.nodeName;
   }
 });
 

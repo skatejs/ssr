@@ -1,5 +1,7 @@
+const vm = require('vm');
+
 const { triggerMutation } = require('./MutationObserver');
-const { each } = require('./util');
+const { each, execCode, nodeName } = require('./util');
 
 Node.DOCUMENT_FRAGMENT_NODE = 11;
 Node.ELEMENT_NODE = 1;
@@ -62,7 +64,7 @@ Object.defineProperty(NodeProto, 'textContent', {
   set(val) {
     this.appendChild(document.createTextNode(val));
     if (this.nodeName === 'SCRIPT') {
-      eval(val);
+      execCode(val);
     }
   }
 });

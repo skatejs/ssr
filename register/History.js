@@ -2,23 +2,25 @@ class History {
   constructor() {
     this._history = [];
     this._index = 0;
-    this.pushState({}, null, 'about:blank');
+    this.pushState(null, null, '/');
   }
   get length() {
     return this._history.length;
   }
   get state() {
-    return this._history[this._index];
+    return this._current().state;
   }
   back() {
     if (index > 0) {
       this.index--;
+      this._update();
       this._dispatch();
     }
   }
   forward() {
     if (index < this.length - 1) {
       this.index++;
+      this._update();
       this._dispatch();
     }
   }
@@ -41,15 +43,22 @@ class History {
       title,
       url
     });
-    this._dispatch();
+    this._update();
   }
   replaceState(state, title, url) {
-    Object.assign(this.state, {
+    this._history.pop();
+    this._history.push({
       state,
       title,
       url
     });
-    this._dispatch();
+    this._update();
+  }
+  _current() {
+    return this._history[this._index];
+  }
+  _update() {
+    location.pathname = this._current().url;
   }
   _dispatch() {
     dispatchEvent(

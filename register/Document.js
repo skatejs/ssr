@@ -2,7 +2,7 @@ const { Comment } = require('./Comment');
 const { customElements } = require('./CustomElements');
 const { DocumentFragment } = require('./DocumentFragment');
 const { NodeFilter } = require('./NodeFilter');
-const { find } = require('./util');
+const { find, nodeName } = require('./util');
 
 const createElement = document.createElement.bind(document);
 
@@ -16,9 +16,7 @@ document.createDocumentFragment = () => new DocumentFragment();
 
 document.createElement = function(name) {
   const Ctor = customElements.get(name);
-  const elem = Ctor ? new Ctor() : createElement(name);
-  Object.defineProperty(elem, 'localName', { value: name });
-  return elem;
+  return Ctor ? new Ctor() : createElement(name);
 };
 
 document.createEvent = function(name) {

@@ -1,5 +1,3 @@
-// @flow
-
 const { Event } = require('./Event');
 
 function triggerMutation(
@@ -56,7 +54,7 @@ class MutationObserver {
     this._cancel = () => {};
     this._element = null;
     this._enqueue = this._enqueue.bind(this);
-    this._promise = promise();
+    this._promise = this._makeBatchedCallback();
     this._records = new Map();
   }
   disconnect() {
@@ -96,7 +94,7 @@ class MutationObserver {
     // }
 
     this._promise.cancel();
-    this._promise = promise(() => this._callback(this.takeRecords()));
+    this._promise = this._makeBatchedCallback();
 
     if (e.mutationType === 'add') {
       record.type = 'childList';
@@ -115,6 +113,9 @@ class MutationObserver {
       record.type = 'characterData';
       record.oldValue = e.oldvalue;
     }
+  }
+  _makeBatchedCallback() {
+    return promise(() => this._callback(this.takeRecords()));
   }
 }
 

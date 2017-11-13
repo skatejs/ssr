@@ -1,3 +1,7 @@
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
 function each(node, call) {
   if (node.nodeName === '#document-fragment') {
     Array.from(node.childNodes).forEach(call);
@@ -5,6 +9,17 @@ function each(node, call) {
     call(node);
   }
   return node;
+}
+
+function execCode(data, opts = {}) {
+  const { context, ...args } = opts;
+  return vm.runInNewContext(data, context || window, opts);
+}
+
+function execFile(file, opts = {}) {
+  const filename = path.resolve(path.join(document.ssr.scriptBase, file));
+  const filedata = fs.readFileSync(filename).toString('utf-8');
+  return execCode(filedata, { ...opts, ...{ filename } });
 }
 
 function expose(name, value) {
@@ -32,8 +47,27 @@ function find(root, call, opts = {}) {
   return list;
 }
 
+function prop(obj, name, opts) {
+  Object.defineProperty(obj, name, {
+    ...{ configurable: true, enumerable: true },
+    ...opts
+  });
+}
+
+function walk(root, call) {
+  if (!root) return;
+  const tree = document.createTreeWalker(root);
+  while (tree.nextNode()) {
+    call(tree.currentNode, tree);
+  }
+}
+
 module.exports = {
   each,
+  execCode,
+  execFile,
   expose,
-  find
+  find,
+  prop,
+  walk
 };
