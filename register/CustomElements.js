@@ -2,13 +2,28 @@ const outdent = require('outdent');
 const { prop } = require('./util');
 
 const customElementRegistry = {};
+const customElementPromises = {};
 const customElements = {
   define(name, func) {
     prop(func.prototype, 'nodeName', { value: name });
     customElementRegistry[name] = func;
+    if (customElementPromises[name]) {
+      customElementPromises[name]();
+      delete customElementPromises[name];
+    }
   },
   get(name) {
     return customElementRegistry[name];
+  },
+  whenDefined(name) {
+    return new Promise(yay => {
+      if (customElementRegistry[name]) {
+        console.log(name);
+        yay();
+      } else {
+        customElementPromises[name] = yay;
+      }
+    });
   },
   __fixLostNodeNameForElement(elem) {
     for (let name in customElementRegistry) {
