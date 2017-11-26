@@ -28,7 +28,7 @@
     "undom": "^0.3.3",
     "yargs": "9.0.1"
   },
-  "version": "0.15.4",
+  "version": "0.16.0",
   "devDependencies": {
     "@skatejs/val": "^0.3.1",
     "babel-preset-react": "^6.24.1",
