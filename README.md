@@ -1,3 +1,5 @@
+___This has been moved to the [skatejs](https://github.com/skatejs/skatejs) monorepo!___
+
 # Web component server-side rendering and testing
 
 [![Build Status](https://travis-ci.org/skatejs/ssr.svg?branch=master)](https://travis-ci.org/skatejs/ssr)
